@@ -6,16 +6,16 @@ using namespace tinyxml2;
 
 int main(int argc, char** argv)
 {
-	static unsigned int const ID_INDEX = 1;
-	static unsigned int const ID_SRCE = 2;
-	static unsigned int const ID_DEST = 3;
+	static unsigned int const ID_SRCE = 1;
+	static unsigned int const ID_DEST = 2;
+	static unsigned int const NUM_ARGS = 3;
 
 	// Для русских символов (можно обойтись LC_CTYPE).
 	setlocale(LC_ALL, "Russian");
 
-	if(argc < 4)
+	if(argc < NUM_ARGS)
 	{
-		std::cout << "LR1.exe [входной/выходной файл индекса] [входной XML файл] [выходной каталог]" << std::endl;
+		std::cout << "LR1.exe [входной XML файл] [выходной каталог]" << std::endl;
 		return 1;
 	}
 
