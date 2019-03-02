@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual C++ Express 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LR1", "LR1.vcxproj", "{8875A98F-F825-46C9-ACA9-918A6BD1BA9E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LR1", "LR1_vs2010.vcxproj", "{8875A98F-F825-46C9-ACA9-918A6BD1BA9E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
