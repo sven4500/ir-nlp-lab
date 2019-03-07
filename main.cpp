@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 
 	if(argc != 3)
 	{
-		std::cout << "LR2.exe [входной файл] [выходной файл]" << std::endl;
+		std::cout << "NLP1.exe [входной файл] [выходной файл]" << std::endl;
 		return -1;
 	}
 
