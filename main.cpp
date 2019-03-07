@@ -1,19 +1,41 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <set>
+#include <locale>
 
 bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 {
+	std::locale loc;
 	fin.seekg(0, std::ios::beg);
-	while(true)
+
+	std::string const delim(" ,.!?@$#&%_/*-+|<>(){}[]:;=`\\\"\'");
+	std::string line;
+
+	while(!getline(fin, line).eof())
 	{
-		std::string token;
-		fin >> token;
-		if(fin.eof())
-			break;
-		tokens.insert(token);
+		std::size_t pos = 0;
+		std::size_t end = 0;
+
+		while((end = line.find_first_of(delim, pos)) != std::string::npos)
+		{
+			std::size_t const size = end - pos;
+			if(size > 1)
+			{
+				// Здесь всё равно могут затесаться знаки препинания и
+				// другие символы из UTF8. Проблема в том что эти знаки
+				// кодируются уде 2, 3 или 4 байтами. Для их отделения
+				// нужно использовать уже немного другой метод.
+				std::string const token(line.substr(pos, size));
+				//std::transform(token.begin(), token.end(), token.begin(), tolower);
+				//if(!isdigit((unsigned char)token[0]))
+					tokens.insert(token);
+			}
+			pos = end + 1;
+		}
 	}
+
 	return !tokens.empty();
 }
 
