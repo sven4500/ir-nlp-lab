@@ -3,11 +3,33 @@
 #include <fstream>
 #include <string>
 #include <set>
-#include <locale>
+#include <vector>
+//#include <locale>
+
+inline void wipe_one(std::string& str, std::string const& seq)
+{
+	std::size_t pos = 0;
+	while((pos = str.find(seq, pos)) != std::string::npos)
+		str.replace(pos++, seq.length(), " ");
+}
+
+void wipe_all(std::string& str)
+{
+	static std::string const seq[] = {
+		"\xE2\x80\x93", // EN DASH
+		"\xE2\x80\x94", // EM DASH
+		"\xE2\x88\x92", // MINUS SIGN
+		"\xC2\xA0"/*, // NON-BREAK SPACE
+		"\xE2\x84\x96" // NUMERO SIGN*/
+	};
+	static unsigned int const size = sizeof(seq) / sizeof(std::string);
+	for(unsigned int i = 0; i < size; ++i)
+		wipe_one(str, seq[i]);
+}
 
 bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 {
-	std::locale loc;
+	//std::locale loc;
 	fin.seekg(0, std::ios::beg);
 
 	std::string const delim(" ,.!?@$#&%_/*-+|<>(){}[]:;=`\\\"\'");
@@ -15,6 +37,9 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 
 	while(!getline(fin, line).eof())
 	{
+		// Исключаем дополнительные символы UTF-8.
+		wipe_all(line);
+
 		std::size_t pos = 0;
 		std::size_t end = 0;
 
