@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 
 	if(argc < NUM_ARGS)
 	{
-		std::cout << "LR1.exe [входной XML файл] [выходной каталог]" << std::endl;
+		std::cout << "IR1.exe [входной XML файл] [выходной каталог]" << std::endl;
 		return 1;
 	}
 
