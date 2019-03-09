@@ -4,7 +4,8 @@
 #include <string>
 #include <set>
 #include <vector>
-//#include <locale>
+#include <locale>
+#include <unicode/unistr.h>
 
 inline void wipe_one(std::string& str, std::string const& seq)
 {
@@ -19,8 +20,10 @@ void wipe_all(std::string& str)
 		"\xE2\x80\x93", // EN DASH
 		"\xE2\x80\x94", // EM DASH
 		"\xE2\x88\x92", // MINUS SIGN
-		"\xC2\xA0"/*, // NON-BREAK SPACE
-		"\xE2\x84\x96" // NUMERO SIGN*/
+		"\xC2\xA0", // NON-BREAK SPACE
+		"\xC2\xAB", // LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+		"\xC2\xBB" // RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+		/*"\xE2\x84\x96" // NUMERO SIGN*/
 	};
 	static unsigned int const size = sizeof(seq) / sizeof(std::string);
 	for(unsigned int i = 0; i < size; ++i)
@@ -53,9 +56,17 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 				// кодируются уде 2, 3 или 4 байтами. Для их отделения
 				// нужно использовать уже немного другой метод.
 				std::string const token(line.substr(pos, size));
+				
+				icu::UnicodeString uniToken(token.c_str(), "UTF8");
+				uniToken.toLower();
+
+				std::string finalToken;
+				uniToken.toUTF8String(finalToken);
+
+				//unicodeToken.toUTF8String(token);
 				//std::transform(token.begin(), token.end(), token.begin(), tolower);
 				//if(!isdigit((unsigned char)token[0]))
-					tokens.insert(token);
+					tokens.insert(finalToken);
 			}
 			pos = end + 1;
 		}
