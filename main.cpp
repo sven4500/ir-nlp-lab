@@ -65,7 +65,7 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 
 				//unicodeToken.toUTF8String(token);
 				//std::transform(token.begin(), token.end(), token.begin(), tolower);
-				//if(!isdigit((unsigned char)token[0]))
+				if(!isdigit((unsigned char)finalToken[0]))
 					tokens.insert(finalToken);
 			}
 			pos = end + 1;
@@ -118,6 +118,7 @@ int main(int argc, char** argv)
 	{
 		std::ofstream fout;
 		fout.open(argv[2], std::ios::out | std::ios::app);
+        fout << std::endl << "##" << argv[1] << std::endl;
 
 		if(fout)
 		{
