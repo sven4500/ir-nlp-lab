@@ -32,9 +32,6 @@ void wipe_all(std::string& str)
 
 bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 {
-	//std::locale loc;
-	fin.seekg(0, std::ios::beg);
-
 	std::string const delim(" ,.!?@$#&%_/*-+|<>(){}[]:;=`\\\"\'");
 	std::string line;
 
@@ -63,8 +60,6 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 				std::string finalToken;
 				uniToken.toUTF8String(finalToken);
 
-				//unicodeToken.toUTF8String(token);
-				//std::transform(token.begin(), token.end(), token.begin(), tolower);
 				if(!isdigit((unsigned char)finalToken[0]))
 					tokens.insert(finalToken);
 			}
@@ -77,7 +72,6 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 
 bool save(std::ofstream& fout, std::set<std::string> const& tokens)
 {
-	fout.seekp(0, std::ios::end);
 	std::set<std::string>::const_iterator iter = tokens.cbegin();
 	std::set<std::string>::const_iterator const end = tokens.cend();
 	while(iter != end)
