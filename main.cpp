@@ -35,9 +35,10 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 	std::string const delim(" ,.!?@$#&%_/*-+|<>(){}[]:;=`\\\"\'");
 	std::string line;
 
-	while(!getline(fin, line).eof())
+	do
 	{
 		// Исключаем дополнительные символы UTF-8.
+		getline(fin, line);
 		wipe_all(line);
 
 		std::size_t pos = 0;
@@ -66,6 +67,7 @@ bool tokenize(std::ifstream& fin, std::set<std::string>& tokens)
 			pos = end + 1;
 		}
 	}
+	while(!fin.eof());
 
 	return !tokens.empty();
 }
