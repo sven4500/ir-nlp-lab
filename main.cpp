@@ -33,7 +33,8 @@ void wipe_all(std::string& str)
 
 bool tokenize(XMLElement const* elem, std::set<std::string>& tokens)
 {
-	static std::string const delim(" ,.!?@$#&%_/*-+|<>(){}[]:;=`\\\"\'");
+	// Любые CR (0x0D) или LF (0x0A) тоже рассматриваются как разделители.
+	static std::string const delim(" ,.!?@$#&%_/*-+|<>(){}[]:;=`\\\"\'\x0A\x0D");
 
 	// Исключаем дополнительные символы UTF-8.
 	std::string line = elem->GetText();
