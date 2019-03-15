@@ -1,82 +1,80 @@
 #include <iostream>
-#include <fstream>
-#include <string>
 #include <tinyxml2.h>
 using namespace tinyxml2;
 
 int main(int argc, char** argv)
 {
-	static unsigned int const ID_SRCE = 1;
-	static unsigned int const ID_DEST = 2;
-	static unsigned int const NUM_ARGS = 3;
-
-	// Для русских символов (можно обойтись LC_CTYPE).
 	setlocale(LC_ALL, "Russian");
 
-	if(argc < NUM_ARGS)
+	if(argc != 3)
 	{
-		std::cout << "IR1.exe [входной XML файл] [выходной каталог]" << std::endl;
+		std::cout << "IR1.exe [входной XML файл] [выходной файл]" << std::endl;
 		return 1;
 	}
 
 	XMLError err = XML_SUCCESS;
 
-	XMLDocument doc;
-	err = doc.LoadFile(argv[ID_SRCE]);
-
+	XMLDocument doc1;
+	err = doc1.LoadFile(argv[1]);
 	if(err != XML_SUCCESS)
 	{
 		std::cout << "Не удалось открыть XML документ. Код ошибки (" << err << ")." << std::endl;
 		return 1;
 	}
 
-	std::cout << "Обрабатываю файл: " << argv[ID_SRCE] << std::endl;
-
-	// Достаём корневой элемент (mediawiki).
-	XMLElement* const root = doc.RootElement();
-	if(root == 0)
+	XMLElement const* const root1 = doc1.FirstChildElement();
+	if(!root1)
 	{
 		std::cout << "Не найден корневой элемент." << std::endl;
 		return 1;
 	}
 
+	XMLDocument doc2;
+	err = doc2.LoadFile(argv[2]);
+
+	XMLElement* root2 = doc2.FirstChildElement();
+	if(!root2)
+	{
+		root2 = doc2.NewElement("corpus");
+		doc2.InsertFirstChild(root2);
+	}
+
+	std::cout << "Обрабатываю файл: " << argv[1] << std::endl;
+
 	unsigned int pages = 0;
 
-	XMLElement* pageElem = root->FirstChildElement("page");
+	XMLElement const* pageElem = root1->FirstChildElement("page");
 	while(pageElem != 0)
 	{
-		XMLElement* revisionElem = pageElem->FirstChildElement("revision");
-		if(revisionElem != 0)
+		XMLElement const* const revisionElem = pageElem->FirstChildElement("revision");
+		if(revisionElem)
 		{
-			XMLElement* idElem = revisionElem->FirstChildElement("id");
-			XMLElement* timestampElem = revisionElem->FirstChildElement("timestamp");
-			XMLElement* textElem = revisionElem->FirstChildElement("text");
+			XMLElement const* const idElem = revisionElem->FirstChildElement("id");
+			XMLElement const* const timestampElem = revisionElem->FirstChildElement("timestamp");
+			XMLElement const* const textElem = revisionElem->FirstChildElement("text");
 
 			if(idElem && timestampElem && textElem)
 			{
-				//XMLNode* textChildElem = textElem->FirstChild();
-				//XMLText* text = textChildElem->ToText();
-		
-				std::string const filename = std::string(argv[ID_DEST]) + "/" + idElem->GetText() + "_" + std::string(timestampElem->GetText()).substr(0, 10) + ".txt";
-				std::ofstream fout(filename, std::ios::out);
-				if(fout)
+				XMLElement* const elem = doc2.NewElement("page");
+				if(elem)
 				{
-					fout << textElem->GetText();
-					fout.close();
-				}
-				else
-				{
-					std::cout << "Не удалось создать файл." << std::endl;
+					elem->SetText(textElem->GetText());
+					elem->SetAttribute("id", idElem->GetText());
+					elem->SetAttribute("timestamp", timestampElem->GetText());
+					//elem->SetAttribute("bytes", strlen(textElem->GetText()));
+					root2->InsertEndChild(elem);
 				}
 
+				if(pages % 500 == 0)
+					std::cout << '\r' << pages << " статей обработано";
 				++pages;
-				if(pages % 1000 == 0)
-					std::cout << "\r\rСтатей обработано: " << pages;
 			}
 		}
 
 		pageElem = pageElem->NextSiblingElement("page");
 	}
 
+	doc2.SaveFile(argv[2]);
+	std::cout << std::endl << "Обработка успешно завершена" << std::endl;
 	return 0;
 }
