@@ -40,8 +40,7 @@
  * CRC32 code derived from work by Gary S. Brown.
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
+#include <crc32.h>
 
 static uint32_t crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -92,9 +91,7 @@ static uint32_t crc32_tab[] = {
 uint32_t
 crc32(uint32_t crc, const void *buf, size_t size)
 {
-	const uint8_t *p;
-
-	p = buf;
+	uint8_t const* p = (uint8_t*)buf;
 	crc = crc ^ ~0U;
 
 	while (size--)
