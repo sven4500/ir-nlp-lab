@@ -5,6 +5,7 @@
 #include <vector>
 #include <tinyxml2.h>
 #include <crc32.h>
+#include <myindex.h>
 using namespace tinyxml2;
 
 bool updateIndex(std::map<unsigned int, std::vector<unsigned int>>& index, XMLElement const* elem)
@@ -35,12 +36,43 @@ bool updateIndex(std::map<unsigned int, std::vector<unsigned int>>& index, XMLEl
 
 bool writeIndex(std::map<unsigned int, std::vector<unsigned int>>& index, std::string const& fileName)
 {
+	std::ofstream fout;
+	fout.open(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
+	if(!fout)
+		return false;
+	unsigned int count = 0;
+	std::map<unsigned int, std::vector<unsigned int> >::const_iterator iter = index.cbegin();
+	std::map<unsigned int, std::vector<unsigned int> >::const_iterator const end = index.cend();
+	while(iter != end)
+	{
+		std::vector<unsigned int> const& docID = iter->second;
+
+		myind::TermIndex termIndex;
+		termIndex._sign = 0xABABABAB;
+		termIndex._prev = 0;
+		termIndex._next = 0;
+		termIndex._termNum = count;
+		termIndex._termID = iter->first;
+		termIndex._docIDCount = docID.size();
+
+		fout.write((char*)&termIndex, sizeof(myind::TermIndex));
+		if(!docID.empty())
+			fout.write((char*)&docID[0], docID.size() * sizeof(unsigned int));
+
+		++count;
+		++iter;
+	}
+	fout.flush();
+	fout.close();
 	return true;
 }
 
 int main(int argc, char** argv)
 {
 	setlocale(LC_CTYPE, "Russian");
+
+	//std::cout << sizeof(myind::TermIndex) << std::endl;
+	//return 0;
 
 	if(argc != 3)
 	{
@@ -70,10 +102,11 @@ int main(int argc, char** argv)
 	{
 		updateIndex(index, pageElem);
 
-		if(pages % 1000 == 0)
+		if(pages % 500 == 0)
 			std::cout << "\rСтатей обработано: " << pages;
+		//if(pages == 2000)
+			//break;
 		++pages;
-		//if(pages == 1000) break;
 
 		pageElem = pageElem->NextSiblingElement();
 	}
