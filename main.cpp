@@ -3,9 +3,12 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <ctime>
 #include <tinyxml2.h>
 #include <crc32.h>
 using namespace tinyxml2;
+
+std::size_t totalChars = 0;
 
 bool updateIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID, XMLElement const* elem)
 {
@@ -25,6 +28,7 @@ bool updateIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID,
 		std::size_t const size = end - pos;
 		if(size > 1)
 		{
+			totalChars = (totalChars + size) / 2;
 			std::string const token = text.substr(pos, size);
 			unsigned int const termID = crc32(0, token.c_str(), token.length());
 			termToDocID[termID].push_back(docID);
@@ -51,8 +55,8 @@ bool writeIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID, 
 
 	while(iter != end)
 	{
-		unsigned int const termID[2] = {0xAAAAAAAA, iter->first};
 		std::vector<unsigned int> const& docID = iter->second;
+		unsigned int const termID[4] = {0xAAAAAAAA, iter->first, docID.size()};
 		
 		fout.write((char*)termID, sizeof(termID));
 		if(!docID.empty())
@@ -95,6 +99,7 @@ int main(int argc, char** argv)
 	XMLElement const* root = doc.FirstChildElement();
 	XMLElement const* pageElem = (root) ? root->FirstChildElement() : 0;
 
+	std::clock_t const timeBegin = clock();
 	while(pageElem != 0)
 	{
 		updateIndex(index, pageElem);
@@ -107,6 +112,12 @@ int main(int argc, char** argv)
 
 		pageElem = pageElem->NextSiblingElement();
 	}
+	std::clock_t const timeEnd = clock();
+
+	std::cout << "\nФормирование индексного файла закончено.\n"
+		<< "Средняя длина термина: " << totalChars << std::endl
+		<< "Количество терминов: " << index.size() << std::endl
+		<< "Время: " << (timeEnd - timeBegin) / CLOCKS_PER_SEC << " сек." << std::endl;
 
 	writeIndex(index, argv[2]);
 	return 0;
