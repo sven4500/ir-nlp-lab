@@ -6,34 +6,24 @@
 #include <vector>
 #include <set>
 
-std::vector<char> loadIndex(std::string const& fileName)
+void readIndex(std::string const& fileName, std::vector<char>& buf)
 {
 	std::ifstream fin;
 	fin.open(fileName, std::ios::in | std::ios::binary);
 	if(!fin)
-		return std::vector<char>();
+		return;
 
 	// Получаем размер файла.
 	fin.seekg(0, std::ios::end);
 	std::streampos const size = fin.tellg();
 	fin.seekg(0, std::ios::beg);
 
-	std::vector<char> buf;
 	buf.resize(size);
 	fin.read(&buf[0], size);
-
 	fin.close();
-	return buf;
 }
 
-inline void makeUnique(std::vector<unsigned int>& docID)
-{
-	std::set<unsigned int> temp;
-	temp.insert(docID.begin(), docID.end());
-	docID.assign(temp.begin(), temp.end());
-}
-
-void appendDocID(void const* const data, std::vector<unsigned int>& docID)
+void getDocID(void const* const data, std::set<unsigned int>& docID)
 {
 	unsigned int const* const iter = reinterpret_cast<unsigned int const*>(data);
 	// Не должно быть идентификатора термина равным нулю. Если это так,
@@ -42,12 +32,11 @@ void appendDocID(void const* const data, std::vector<unsigned int>& docID)
 	// в этом случае нам тоже делать нечего.
 	if(iter[0] != 0xAAAAAAAA || iter[1] == 0 || iter[2] == 0)
 		return;
-	docID.insert(docID.end(), &iter[4], &iter[4] + iter[2]);
+	docID.insert(&iter[4], &iter[4] + iter[2]);
 }
 
-void getCompleteDocID(std::vector<char> const& data, std::vector<unsigned int>& docID)
+void getDocID(std::vector<char> const& data, std::set<unsigned int>& docID, unsigned int const termID = 0)
 {
-	//docID.clear();
 	if(data.empty())
 		return;
 
@@ -56,32 +45,26 @@ void getCompleteDocID(std::vector<char> const& data, std::vector<unsigned int>& 
 
 	while(true)
 	{
-		// Проверяем только то что нам нужно проверять:
+		// Проверяем только то что нам нужно проверять, а именно:
 		// метку блока и выход за границы памяти.
 		if(iter[0] != 0xAAAAAAAA || iter >= end)
 			break;
-		appendDocID(iter, docID);
-		iter += 4 + iter[2];
-	}
-
-	// Теперь удаляем все повторяющиеся идентификаторы.
-	makeUnique(docID);
-}
-
-std::vector<unsigned int> lookupDocID(std::vector<char> const& data, unsigned int const termID)
-{
-	if(data.empty())
-		return std::vector<unsigned int>();
-
-	unsigned int const* iter = (unsigned int*)(&data[0] + 16);
-	unsigned int const* const end = (unsigned int*)(&data[0] + data.size());
-
-	while(true)
-	{
-		if(iter[0] != 0xAAAAAAAA || iter >= end)
-			return std::vector<unsigned int>();
-		/*if(iter[1] == termID)
-			return getDocID(iter);*/
+		/*if(termID == 0 || (termID != 0 && termID == iter[1]))
+			getDocID(iter, docID);
+		if(termID != 0 && termID == iter[1])
+			break;*/
+		if(termID != 0)
+		{
+			if(termID == iter[1])
+			{
+				getDocID(iter, docID);
+				return;
+			}
+		}
+		else
+		{
+			getDocID(iter, docID);
+		}
 		iter += 4 + iter[2];
 	}
 }
@@ -97,14 +80,16 @@ int main(int argc, char** argv)
 	}
 
 	// Считываем весь индекс целиком в ОЗУ.
-	std::vector<char> const rawIndex = loadIndex(argv[1]);
-	std::vector<unsigned int> docID;
-	getCompleteDocID(rawIndex, docID);
+	std::vector<char> rawIndex;
+	readIndex(argv[1], rawIndex);
+
+	std::set<unsigned int> complDocID;
+	getDocID(rawIndex, complDocID);
 
 	// Получим поисковой запрос.
 	//std::stringstream ss(argv[2]);
 
-	std::cout << docID.size() << std::endl;
+	std::cout << complDocID.size() << std::endl;
 	std::system("pause");
 	return 0;
 }
