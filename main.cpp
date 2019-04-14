@@ -8,8 +8,10 @@
 #include <crc32.h>
 using namespace tinyxml2;
 
-std::size_t totalChars = 0;
+std::size_t meanChars = 0;
 
+// Добавляет идентификатор документа docID для всех терминов содержащихся в
+// этом документе.
 bool updateIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID, XMLElement const* elem)
 {
 	unsigned int const docID = elem->IntAttribute("id", 0);
@@ -28,7 +30,7 @@ bool updateIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID,
 		std::size_t const size = end - pos;
 		if(size > 1)
 		{
-			totalChars = (totalChars + size) / 2;
+			meanChars = (meanChars + size) / 2;
 			std::string const token = text.substr(pos, size);
 			unsigned int const termID = crc32(0, token.c_str(), token.length());
 			termToDocID[termID].push_back(docID);
@@ -46,28 +48,59 @@ bool writeIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID, 
 	if(!fout)
 		return false;
 
+	// Количество всех терминов.
+	std::size_t const termCount = termToDocID.size();
+
+	// Словарь: инициализируем вектор и вычисляем размер словаря в байтах.
+	std::vector<unsigned int> lookupTable(2 * termCount, 0);
+	unsigned int const lookupTableBytes = lookupTable.size() * sizeof(int);
+	
 	// Записываем заголовок файла.
-	unsigned int const header[4] = {0xABABABAB};
-	fout.write((char*)&header, sizeof(header));
+	unsigned int const fileHeader[4] = {0xABABABAB, sizeof(fileHeader) + lookupTableBytes};
+	fout.write((char*)fileHeader, sizeof(fileHeader));
+
+	// Пока прокускаем словарь. Запишем его после.
+	fout.seekp(lookupTableBytes, std::ios::cur);
 
 	std::map<unsigned int, std::vector<unsigned int> >::const_iterator iter = termToDocID.cbegin();
-	std::map<unsigned int, std::vector<unsigned int> >::const_iterator const end = termToDocID.cend();
+	//std::map<unsigned int, std::vector<unsigned int> >::const_iterator const end = termToDocID.cend();
 
-	while(iter != end)
+	std::cout << "Записываю файл..." << std::endl;
+
+	for(std::size_t i = 0; i < termCount; ++i)
 	{
+		unsigned int const& termID = iter->first;
 		std::vector<unsigned int> const& docID = iter->second;
-		unsigned int const termID[4] = {0xAAAAAAAA, iter->first, docID.size()};
-		
-		fout.write((char*)termID, sizeof(termID));
+
+		// Сохраняем информацию о смещении темина в словарь.
+		lookupTable[2*i+0] = termID;
+		lookupTable[2*i+1] = (unsigned int)fout.tellp();
+
+		// Заголовок термина. Каждому списку предшевствует этот заголовок.
+		unsigned int const termHeader[4] = {0xAAAAAAAA, termID, docID.size()};
+
+		// Записываем информацию о текмине.
+		fout.write((char*)termHeader, sizeof(termHeader));
 		if(!docID.empty())
 			fout.write((char*)&docID[0], docID.size() * sizeof(int));
 
 		++iter;
+
+		if(i % 10000 == 0)
+		{
+			std::cout << "\rТерминов записано: " << i << '/' << termCount;
+			fout.flush();
+		}
 	}
+
+	std::cout << "\nЗаписываю словарь..." << std::endl;
+
+	// Записываем словарь в файл.
+	fout.seekp(sizeof(fileHeader), std::ios::beg);
+	fout.write((char*)&lookupTable[0], lookupTableBytes);
 
 	fout.flush();
 	fout.close();
-
 	return true;
 }
 
@@ -103,19 +136,21 @@ int main(int argc, char** argv)
 	while(pageElem != 0)
 	{
 		updateIndex(index, pageElem);
+		pageElem = pageElem->NextSiblingElement();
+		++pages;
 
 		if(pages % 500 == 0)
 			std::cout << "\rСтатей обработано: " << pages;
-		//if(pages == 2000)
-			//break;
-		++pages;
 
-		pageElem = pageElem->NextSiblingElement();
+		#if defined(_DEBUG)
+		if(pages == 1000)
+			break;
+		#endif
 	}
 	std::clock_t const timeEnd = clock();
 
-	std::cout << "\nФормирование индексного файла закончено.\n"
-		<< "Средняя длина термина: " << totalChars << std::endl
+	std::cout << "\nФормирование индексного файла завершено.\n"
+		<< "Средняя длина термина: " << meanChars << std::endl
 		<< "Количество терминов: " << index.size() << std::endl
 		<< "Время: " << (timeEnd - timeBegin) / CLOCKS_PER_SEC << " сек." << std::endl;
 
