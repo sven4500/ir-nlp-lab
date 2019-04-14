@@ -87,10 +87,7 @@ bool writeIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID, 
 		++iter;
 
 		if(i % 10000 == 0)
-		{
 			std::cout << "\rТерминов записано: " << i << '/' << termCount;
-			fout.flush();
-		}
 	}
 
 	std::cout << "\nЗаписываю словарь..." << std::endl;
@@ -99,8 +96,8 @@ bool writeIndex(std::map<unsigned int, std::vector<unsigned int>>& termToDocID, 
 	fout.seekp(sizeof(fileHeader), std::ios::beg);
 	fout.write((char*)&lookupTable[0], lookupTableBytes);
 
-	fout.flush();
 	fout.close();
+	std::cout << "Файл записан успешно." << std::endl;
 	return true;
 }
 
