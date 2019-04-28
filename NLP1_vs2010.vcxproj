@@ -13,7 +13,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{220D8621-0409-45D5-91EB-C18DFE428A3F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>LR2</RootNamespace>
+    <RootNamespace>NLP1</RootNamespace>
+	<ProjectName>NLP1</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
