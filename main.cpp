@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -5,68 +6,58 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <unicode/unistr.h>
+#include <crc32.h>
 
-void readIndex(std::string const& fileName, std::vector<char>& buf)
+std::set<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID)
 {
-	std::ifstream fin;
-	fin.open(fileName, std::ios::in | std::ios::binary);
-	if(!fin)
-		return;
+	unsigned int fileHead[4] = {};
 
-	// Получаем размер файла.
-	fin.seekg(0, std::ios::end);
-	std::streampos const size = fin.tellg();
 	fin.seekg(0, std::ios::beg);
+	fin.read((char*)&fileHead, sizeof(fileHead));
 
-	buf.resize(size);
-	fin.read(&buf[0], size);
-	fin.close();
-}
+	// Проверяем метку индексного файла.
+	if(fileHead[0] != 0xABABABAB)
+		return std::set<unsigned int>();
 
-void getDocID(void const* const data, std::set<unsigned int>& docID)
-{
-	unsigned int const* const iter = reinterpret_cast<unsigned int const*>(data);
-	// Не должно быть идентификатора термина равным нулю. Если это так,
-	// то скорее всего это ошибка файла поэтому ничего не делаем.
-	// Если количество документов нулевое, то это не ошибка, однако
-	// в этом случае нам тоже делать нечего.
-	if(iter[0] != 0xAAAAAAAA || iter[1] == 0 || iter[2] == 0)
-		return;
-	docID.insert(&iter[4], &iter[4] + iter[2]);
-}
+	std::streamoff posAt = 0;
 
-void getDocID(std::vector<char> const& data, std::set<unsigned int>& docID, unsigned int const termID = 0)
-{
-	if(data.empty())
-		return;
-
-	unsigned int const* iter = (unsigned int*)(&data[0] + 16);
-	unsigned int const* const end = (unsigned int*)(&data[0] + data.size());
-
-	while(true)
+	// Двигаемся по таблице индексов - ищем хэш токена.
+	// TODO: здесь потенциальное узкое место поиска.
+	while(fin.tellg() < fileHead[1])
 	{
-		// Проверяем только то что нам нужно проверять, а именно:
-		// метку блока и выход за границы памяти.
-		if(iter[0] != 0xAAAAAAAA || iter >= end)
+		// По очереди считываем элементы таблицы и ищем наш токен.
+		unsigned int tabElem[2] = {};
+		fin.read((char*)tabElem, sizeof(tabElem));
+
+		if(tabElem[0] == termID)
+		{
+			posAt = tabElem[1];
 			break;
-		/*if(termID == 0 || (termID != 0 && termID == iter[1]))
-			getDocID(iter, docID);
-		if(termID != 0 && termID == iter[1])
-			break;*/
-		if(termID != 0)
-		{
-			if(termID == iter[1])
-			{
-				getDocID(iter, docID);
-				return;
-			}
 		}
-		else
-		{
-			getDocID(iter, docID);
-		}
-		iter += 4 + iter[2];
 	}
+
+	if(posAt == 0)
+		return std::set<unsigned int>();
+
+	unsigned int tokenHead[4] = {};
+
+	fin.seekg(posAt, std::ios::beg);
+	fin.read((char*)tokenHead, sizeof(tokenHead));
+
+	// Проверяем правильность заголовка блока описывающего токен:
+	// сигнатура должна быть на месте, идентификатор токена должен быть
+	// равен запрашиваемому идентификатору и количество документов
+	// тожен не может быть равно нулю.
+	if(tokenHead[0] != 0xAAAAAAAA || tokenHead[1] != termID || tokenHead[2] == 0)
+		return std::set<unsigned int>();
+
+	// На всякий случай предохраняемся от слишком большого количества документов.
+	std::size_t const docCount = std::min(tokenHead[2], 2500U);
+	std::vector<unsigned int> docID(docCount);
+
+	fin.read((char*)&docID[0], sizeof(unsigned int) * docCount);
+	return std::set<unsigned int>(docID.begin(), docID.end());
 }
 
 int main(int argc, char** argv)
@@ -75,21 +66,34 @@ int main(int argc, char** argv)
 
 	if(argc != 3)
 	{
-		std::cout << "IR4.exe index.dat запрос" << std::endl;
+		std::cout << "IR4.exe индекс запрос" << std::endl;
 		return 1;
 	}
 
-	// Считываем весь индекс целиком в ОЗУ.
-	std::vector<char> rawIndex;
-	readIndex(argv[1], rawIndex);
+	std::ifstream fin;
+	fin.open(argv[1], std::ios::binary);
 
-	std::set<unsigned int> complDocID;
-	getDocID(rawIndex, complDocID);
+	if(!fin)
+	{
+		std::cout << "Не удалось открыть индекс." << std::endl;
+		return -1;
+	}
 
-	// Получим поисковой запрос.
-	//std::stringstream ss(argv[2]);
+	{
+		icu::UnicodeString uniToken(argv[2], "UTF8");
+		uniToken.toLower();
 
-	std::cout << complDocID.size() << std::endl;
-	std::system("pause");
+		std::string token;
+		uniToken.toUTF8String(token);
+
+		unsigned int const hash = crc32(0, token.c_str(), token.length());
+
+		std::set<unsigned int> docID;
+		docID = getDocID(fin, hash);
+
+		for(std::set<unsigned int>::const_iterator iter = docID.cbegin(); iter != docID.cend(); ++iter)
+			std::cout << *iter << ' ';
+	}
+
 	return 0;
 }
