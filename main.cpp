@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 
 	{
 		std::string query;
-		std::cin >> query;
+		std::getline(std::cin, query);
 		std::vector<unsigned int> const docID = parse(fin, query.c_str());
 		for(std::size_t i = 0; i < docID.size(); ++i)
 			std::cout << docID[i] << ' ';
