@@ -14,9 +14,9 @@ int main(int argc, char** argv)
 {
 	std::setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 3)
+	if(argc != 2)
 	{
-		std::cout << "IR4.exe индекс запрос" << std::endl;
+		std::cout << "IR4.exe индекс" << std::endl;
 		return 1;
 	}
 
@@ -30,7 +30,9 @@ int main(int argc, char** argv)
 	}
 
 	{
-		std::vector<unsigned int> const docID = parse(fin, argv[2]);
+		std::string query;
+		std::cin >> query;
+		std::vector<unsigned int> const docID = parse(fin, query.c_str());
 		for(std::size_t i = 0; i < docID.size(); ++i)
 			std::cout << docID[i] << ' ';
 	}
