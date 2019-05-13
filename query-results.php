@@ -1,13 +1,13 @@
 ﻿<?php
 	$query = $_GET['query'];
 	print("<b>Запрос:</b> $query<br>");
-	execute('IR4.exe "Corpus/index.dat" "' . $query . '"');
-	function execute($exe) {
+	execute('IR4.exe "Corpus/index.dat"', $query);
+	function execute($exe, $query) {
 		$exe_cmd = escapeshellcmd($exe);
 		$pipe_desc = array(array('pipe', 'r'), array('pipe', 'w'), array('pipe', 'w'));
 		$process = proc_open($exe_cmd, $pipe_desc, $pipes);
 
-		//fputs($pipes[0], 'фотосинтез');
+		fputs($pipes[0], $query);
 		fclose($pipes[0]);
 
 		$result = fgets($pipes[1]);
@@ -17,6 +17,6 @@
 		print("<b>Документы:</b> $result<br>");
 
 		$ret_val = proc_close($process);
-		//print("Return: $ret_val<br>");
+		print("<b>Ошибка:</b> $ret_val<br>");
 	}
 ?>
