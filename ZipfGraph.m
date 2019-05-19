@@ -5,6 +5,9 @@ if fd <= 0
     return;
 end
 A = fscanf(fd, '%d');
-A=A./max(A);
 fclose(fd);
-plot(1:length(A),A)
+X = 1:length(A);
+%A=A./max(A);
+B = max(A) ./ X;
+plot(X,A,X,B);
+pbaspect([1 1 1]);

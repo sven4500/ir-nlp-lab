@@ -7,9 +7,10 @@
 #include <vector>
 #include <crc32.h>
 #include <tinyxml2.h>
+#include <unicode\unistr.h>
 using namespace tinyxml2;
 
-void processPage(XMLElement const* const elem, std::map<unsigned int, unsigned int>& map)
+void processPage(XMLElement const* const elem, std::map<unsigned int, unsigned int>& map, bool russianOnly = false)
 {
 	std::size_t pos = 0;
 	std::size_t end = 0;
@@ -19,11 +20,25 @@ void processPage(XMLElement const* const elem, std::map<unsigned int, unsigned i
 	while((end = text.find_first_of('\n', pos)) != std::string::npos)
 	{
 		std::size_t const size = end - pos;
-		if(size > 1)
+		if(size >= 1)
 		{
+			bool process = true;
 			std::string const token = text.substr(pos, size);
-			unsigned int const termID = crc32(0, token.c_str(), token.length());
-			map[termID]++;
+
+			if(russianOnly)
+			{
+				// Если ххотим обрабатывать только токены на русском языке.
+				icu::UnicodeString uniToken(token.c_str(), "UTF8");
+				UChar ch = uniToken.charAt(0);
+				if(false)
+					process = false;
+			}
+
+			if(process)
+			{
+				unsigned int const termID = crc32(0, token.c_str(), token.length());
+				map[termID]++;
+			}
 		}
 		pos = end + 1;
 	}
@@ -46,6 +61,7 @@ bool writeOutput(std::string const& filename, std::map<unsigned int, unsigned in
 		fout << vect[i] << ' ';
 	fout.flush();
 	fout.close();
+	return true;
 }
 
 int main(int argc, char** argv)
@@ -82,8 +98,10 @@ int main(int argc, char** argv)
 		++numPagesProcessed;
 		if(numPagesProcessed % 500 == 0)
 			std::cout << "\rОбработано статей: " << numPagesProcessed;
-		//if(numPagesProcessed > 2000)
-			//break;
+		#ifdef _DEBUG
+		if(numPagesProcessed > 2000)
+			break;
+		#endif
 		pageElem = pageElem->NextSiblingElement();
 	}
 
