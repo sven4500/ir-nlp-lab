@@ -11,10 +11,12 @@
 		fclose($pipes[0]);
 
 		$result = fgets($pipes[1]);
+		$msTime = fgets($pipes[1]);
 		fclose($pipes[1]);
 		fclose($pipes[2]);
 
 		print("<b>Документы:</b> $result<br>");
+		print("<b>Время поиска (мс):</b> $msTime<br>");
 
 		$ret_val = proc_close($process);
 		print("<b>Ошибка:</b> $ret_val<br>");
