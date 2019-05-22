@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DA80EE0F-15F8-406A-B281-8DAE38BE844D}</ProjectGuid>
+    <ProjectGuid>{EF21C233-2F28-432B-B2AD-B8253EFBB780}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>IR4</RootNamespace>
-    <ProjectName>IR4</ProjectName>
+    <RootNamespace>IR5</RootNamespace>
+    <ProjectName>IR5</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
