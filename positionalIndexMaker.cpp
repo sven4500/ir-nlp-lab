@@ -44,13 +44,13 @@ bool PositionalIndexMaker::update(XMLElement const* const elem)
         }
 
         unsigned int const hash = crc32(0, token.c_str(), token.size());
-        _tokenToPos[hash][docID].push_back(pos);
+        _tokenToPos[hash].push_back(((unsigned long long)docID << 32) | pos);
 
         beg = end;
         ++pos;
     }
 
-    return false;
+    return true;
 }
 
 bool PositionalIndexMaker::write(std::string const& filename)

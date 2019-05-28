@@ -18,9 +18,10 @@ public:
     virtual bool write(std::string const& filename);
 
 protected:
-    // Отображение контрольной суммы токена, на другое отображение,
-    // которое отображает идентификатор документа на вектор координат.
-    std::map<unsigned int, std::map<unsigned int, std::vector<unsigned short>>> _tokenToPos;
+    // Отображение контрольной суммы токена, на вектор словопозиций.
+    // Словопозиция совмещена с идентификатором документа ради эуономии
+    // памяти и быстродействия.
+    std::map<unsigned int, std::vector<unsigned long long>> _tokenToPos;
 
 };
 

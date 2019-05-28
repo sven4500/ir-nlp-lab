@@ -29,7 +29,7 @@ void make(XMLDocument* doc, IndexMaker* maker)
 			std::cout << "\rСтатей обработано: " << pages;
 
 		#if defined(_DEBUG)
-		if(pages == 1000)
+		if(pages == 2000)
 			break;
 		#endif
 	}
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 
 	std::cout << "Обрабатываю файлы: " << argv[1] << " и " << argv[2] << std::endl;
 
-    /*{
+    {
         std::cout << std::endl << "Создаю инвертированный индекс..." << std::endl;
 
         InvertedIndexMaker maker;
@@ -68,13 +68,15 @@ int main(int argc, char** argv)
             << "Количество терминов: " << maker.termCount() << std::endl;
 
         maker.write(argv[3]);
-    }*/
+    }
 
     {
-        std::cout << std::endl << "Создаю позиционный индекс..." << std::endl;
+        std::cout << std::endl << "Создаю координатный индекс..." << std::endl;
 
         PositionalIndexMaker maker;
         make(&corpusDoc, &maker);
+
+        std::cout << "фф" << std::endl;
 
         maker.write(argv[4]);
     }
