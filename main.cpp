@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 
 	std::cout << "Обрабатываю файлы: " << argv[1] << " и " << argv[2] << std::endl;
 
-    {
+    /*{
         std::cout << std::endl << "Создаю инвертированный индекс..." << std::endl;
 
         InvertedIndexMaker maker;
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
             << "Количество терминов: " << maker.termCount() << std::endl;
 
         maker.write(argv[3]);
-    }
+    }*/
 
     {
         std::cout << std::endl << "Создаю позиционный индекс..." << std::endl;
@@ -78,6 +78,6 @@ int main(int argc, char** argv)
 
         maker.write(argv[4]);
     }
-	
-	return 0;
+
+    return 0;
 }
