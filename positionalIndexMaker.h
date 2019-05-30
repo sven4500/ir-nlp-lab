@@ -17,11 +17,18 @@ public:
     virtual bool update(tinyxml2::XMLElement const* element);
     virtual bool write(std::string const& filename);
 
+    unsigned int tokenCount()const;
+    unsigned int uniqueTokenCount()const;
+
 protected:
     // Отображение контрольной суммы токена, на вектор словопозиций.
     // Словопозиция совмещена с идентификатором документа ради эуономии
     // памяти и быстродействия.
     std::map<unsigned int, std::vector<unsigned long long>> _tokenToPos;
+
+    // Количество терминов.
+    unsigned int _tokenCount;
+    unsigned int _uniqueTokenCount;
 
 };
 

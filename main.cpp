@@ -76,7 +76,8 @@ int main(int argc, char** argv)
         PositionalIndexMaker maker;
         make(&corpusDoc, &maker);
 
-        std::cout << "фф" << std::endl;
+        std::cout << "Количество токенов: " << maker.tokenCount() << std::endl
+            << "Количество уникальных токенов: " << maker.uniqueTokenCount() << std::endl;
 
         maker.write(argv[4]);
     }
