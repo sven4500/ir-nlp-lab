@@ -62,11 +62,11 @@ std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID
 }
 
 // ‘ункци€ возвращает отображение документов на список словопозиций дл€ термина termID.
-std::map<unsigned int, std::vector<unsigned int>> getDocIDToPos(std::ifstream& fin, unsigned int tokenID)
+std::vector<std::pair<unsigned int, std::vector<unsigned int>>> getDocIDToPos(std::ifstream& fin, unsigned int tokenID)
 {
     fin.seekg(0, std::ios::beg);
 
-    // 0: метка заголовка; 1: количество токенов; 2: размер словар€.
+    #pragma pack(1)
     struct
     {
         unsigned int _sign;
@@ -77,14 +77,15 @@ std::map<unsigned int, std::vector<unsigned int>> getDocIDToPos(std::ifstream& f
 
     fin.read((char*)&fileHead, sizeof(fileHead));
     if(fileHead._sign != 0xBCBCBCBC || fileHead._tokenCount * 8 != fileHead._lookupTableBytes)
-        return std::map<unsigned int, std::vector<unsigned int>>();
+        return std::vector<std::pair<unsigned int, std::vector<unsigned int>>>();
 
     // —читываем словарь в пам€ть. “ак поиск будет быстрее.
     std::vector<std::pair<unsigned int, unsigned int>> lookupTable(fileHead._tokenCount);
     fin.read((char*)&lookupTable[0], fileHead._lookupTableBytes);
 
-    // Ќаходим в словаре запись относ€щуюс€ к искомому токену.
     std::pair<unsigned int, unsigned int> lookupRecord(0, 0);
+
+    // Ќаходим в словаре запись относ€щуюс€ к искомому токену.
     for(std::size_t i = 0; i < lookupTable.size(); ++i)
     {
         if(lookupTable[i].first == tokenID)
@@ -96,14 +97,15 @@ std::map<unsigned int, std::vector<unsigned int>> getDocIDToPos(std::ifstream& f
 
     // ѕровер€ем был ли найден такой токен в словаре.
     if(lookupRecord.first == 0)
-        return std::map<unsigned int, std::vector<unsigned int>>();
+        return std::vector<std::pair<unsigned int, std::vector<unsigned int>>>();
 
     // —мещаемс€ туда где расположен блок первого документа
     // ассоциированного с искомым токеном.
     fin.seekg(lookupRecord.second, std::ios::beg);
 
+    std::vector<std::pair<unsigned int, std::vector<unsigned int>>> docIDToPos;
+
     // —читываем все блоки документов относ€щиес€ к выбранному токену.
-    std::map<unsigned int, std::vector<unsigned int>> docIDToPos;
     while(true)
     {
         #pragma pack(1)
@@ -125,9 +127,9 @@ std::map<unsigned int, std::vector<unsigned int>> getDocIDToPos(std::ifstream& f
 
         if(head._posCount != 0)
         {
-            std::vector<unsigned int>& vect = docIDToPos[head._docID];
-            vect.resize(head._posCount);
-            fin.read((char*)&vect[0], sizeof(int) * head._posCount);
+            std::pair<unsigned int, std::vector<unsigned int>> p(head._docID, head._posCount);
+            fin.read((char*)&p.second[0], sizeof(int) * head._posCount);
+            docIDToPos.push_back(p);
         }
     }
 
@@ -152,7 +154,9 @@ std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token
 
 std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& ss)
 {
-    std::vector<std::map<unsigned int, std::vector<unsigned int>>> vect;
+    // ¬ектор хранит пары токен - вектор. ¬торой вектор хранит пары документ -
+    // вектор словопозиций.
+    std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, std::vector<unsigned int>>>>> vect;
     unsigned int distance = 0;
 
     // —читываем цитатный запрос.
@@ -162,23 +166,21 @@ std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& 
         while(ss >> token && token != "\"")
         {
             unsigned int const tokenID = makeTokenID(token);
-            vect.push_back(getDocIDToPos(finPosindex, tokenID));
+            std::pair<unsigned int, std::vector<std::pair<unsigned int, std::vector<unsigned int>>>> const p(tokenID, getDocIDToPos(finPosindex, tokenID));
+            vect.push_back(p);
         }
 
-        if(ss >> token && !token.empty())
+        if(ss >> token && token == "/")
         {
-            if(token == "/")
-            {
-                ss >> distance;
-            }
-            else
-            {
-                // ¬озвращаем обратно то что считали в обратном пор€дке.
-                // «десь мы точно знаем что токен не пустой.
-                for(int i = token.size() - 1; i >= 0; --i)
-                    ss.putback(token[i]);
-                distance = vect.size();
-            }
+            ss >> distance;
+        }
+        else
+        {
+            // ¬озвращаем обратно то что считали в обратном пор€дке.
+            // ќчень важно чтобы переменна€ i имела знаковый тип!
+            for(int i = token.size() - 1; i >= 0; --i)
+                ss.putback(token[i]);
+            distance = vect.size();
         }
     }
 
@@ -188,18 +190,41 @@ std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& 
     std::vector<unsigned int> result;
 
     {
-        // ¬ыбираем первое слово цитаты.
-        std::map<unsigned int, std::vector<unsigned int>> const& m1 = vect[0];
-        for(std::size_t i = 0; i < vect.size(); ++i)
-        {
-            for(std::size_t i = 0; i < vect.size(); ++i)
-            {
+        std::map<unsigned int, unsigned int> hits;
 
+        // i номер токена; j номер документа; k номер словопозиции.
+        for(std::size_t i1 = 0, i2 = 1; i2 < vect.size(); ++i1, ++i2)
+        {
+            for(std::size_t j1 = 0; j1 < vect[i1].second.size(); ++j1)
+            {
+                for(std::size_t j2 = 0; j2 < vect[i2].second.size(); ++j2)
+                {
+                    for(std::size_t k1 = 0; k1 < vect[i1].second[j1].second.size(); ++k1)
+                    {
+                        for(std::size_t k2 = 0; k2 < vect[i2].second[j2].second.size(); ++k2)
+                        {
+                            // —мотрим чтобы токены располагались в разных документах
+                            // а после смотрим чтобы рассто€ние между
+                            // ними не превышало определЄнного значени€.
+                            // «десь гарантированно сравниваютс€ разные токены так как i2 = i1 + 1 всегда.
+                            if(vect[i2].second[j2].first == vect[i1].second[j1].first &&
+                                vect[i2].second[j2].second[k2] - vect[i1].second[j1].second[k1] < distance)
+                            {
+                                // “ак как документ один и тот же здесь не варжно [i1][j1] или [i2][j2].
+                                ++hits[vect[i1].second[j1].first];
+                            }
+                        }
+                    }
+                }
             }
         }
+
+        for(std::map<unsigned int, unsigned int>::const_iterator iter = hits.cbegin(); iter != hits.cend(); ++iter)
+            if(iter->second >= vect.size() - 1)
+                result.push_back(iter->first);
     }
 
-    return std::vector<unsigned int>();
+    return result;
 }
 
 std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& expr)
