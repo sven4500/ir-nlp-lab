@@ -4,9 +4,12 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <map>
+#include <set>
 #include <crc32.h>
 #include "parser.h"
 
+// ‘ункци€ возвращает список документов в которых встречаетс€ термин termID.
 std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID)
 {
 	unsigned int fileHead[4] = {};
@@ -58,60 +61,195 @@ std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID
 	return std::vector<unsigned int>(docID.begin(), docID.end());
 }
 
-std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string token)
+// ‘ункци€ возвращает отображение документов на список словопозиций дл€ термина termID.
+std::map<unsigned int, std::vector<unsigned int>> getDocIDToPos(std::ifstream& fin, unsigned int tokenID)
+{
+    fin.seekg(0, std::ios::beg);
+
+    // 0: метка заголовка; 1: количество токенов; 2: размер словар€.
+    struct
+    {
+        unsigned int _sign;
+        unsigned int _tokenCount;
+        unsigned int _lookupTableBytes;
+        unsigned int _reserved;
+    }fileHead = {};
+
+    fin.read((char*)&fileHead, sizeof(fileHead));
+    if(fileHead._sign != 0xBCBCBCBC || fileHead._tokenCount * 8 != fileHead._lookupTableBytes)
+        return std::map<unsigned int, std::vector<unsigned int>>();
+
+    // —читываем словарь в пам€ть. “ак поиск будет быстрее.
+    std::vector<std::pair<unsigned int, unsigned int>> lookupTable(fileHead._tokenCount);
+    fin.read((char*)&lookupTable[0], fileHead._lookupTableBytes);
+
+    // Ќаходим в словаре запись относ€щуюс€ к искомому токену.
+    std::pair<unsigned int, unsigned int> lookupRecord(0, 0);
+    for(std::size_t i = 0; i < lookupTable.size(); ++i)
+    {
+        if(lookupTable[i].first == tokenID)
+        {
+            lookupRecord = lookupTable[i];
+            break;
+        }
+    }
+
+    // ѕровер€ем был ли найден такой токен в словаре.
+    if(lookupRecord.first == 0)
+        return std::map<unsigned int, std::vector<unsigned int>>();
+
+    // —мещаемс€ туда где расположен блок первого документа
+    // ассоциированного с искомым токеном.
+    fin.seekg(lookupRecord.second, std::ios::beg);
+
+    // —читываем все блоки документов относ€щиес€ к выбранному токену.
+    std::map<unsigned int, std::vector<unsigned int>> docIDToPos;
+    while(true)
+    {
+        #pragma pack(1)
+        struct{
+            unsigned int _sign;
+            unsigned int _tokenID;
+            unsigned int _docID;
+            unsigned int _posCount;
+        }head = {};
+
+        fin.read((char*)&head, sizeof(head));
+
+        // ѕровер€ем правильность заголовка одной записи. ¬о первых должна
+        // совпадать сигнатура заголовка, во-вторых в заголовке должен быть
+        // указан искомый ткоен, а если это не так, то запись относитс€ уже
+        // к следующему токену.
+        if(head._sign != 0x9C9C9C9C || head._tokenID != tokenID)
+            break;
+
+        if(head._posCount != 0)
+        {
+            std::vector<unsigned int>& vect = docIDToPos[head._docID];
+            vect.resize(head._posCount);
+            fin.read((char*)&vect[0], sizeof(int) * head._posCount);
+        }
+    }
+
+    return docIDToPos;
+}
+
+unsigned int makeTokenID(std::string token)
 {
 	icu::UnicodeString uniToken(token.c_str(), "UTF8");
 	uniToken.toLower();
 	token.clear();
 	uniToken.toUTF8String(token);
 	unsigned int const hash = crc32(0, token.c_str(), token.length());
-	return getDocID(fin, hash);
+	return hash;
 }
 
-std::vector<unsigned int> parseSub(std::ifstream& fin, std::stringstream& expr)
+std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token)
+{
+	unsigned int const tokenID = makeTokenID(token);
+	return getDocID(fin, tokenID);
+}
+
+std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& ss)
+{
+    std::vector<std::map<unsigned int, std::vector<unsigned int>>> vect;
+    unsigned int distance = 0;
+
+    // —читываем цитатный запрос.
+    {
+        std::string token;
+
+        while(ss >> token && token != "\"")
+        {
+            unsigned int const tokenID = makeTokenID(token);
+            vect.push_back(getDocIDToPos(finPosindex, tokenID));
+        }
+
+        if(ss >> token && !token.empty())
+        {
+            if(token == "/")
+            {
+                ss >> distance;
+            }
+            else
+            {
+                // ¬озвращаем обратно то что считали в обратном пор€дке.
+                // «десь мы точно знаем что токен не пустой.
+                for(int i = token.size() - 1; i >= 0; --i)
+                    ss.putback(token[i]);
+                distance = vect.size();
+            }
+        }
+    }
+
+    if(vect.empty())
+        return std::vector<unsigned int>();
+
+    std::vector<unsigned int> result;
+
+    {
+        // ¬ыбираем первое слово цитаты.
+        std::map<unsigned int, std::vector<unsigned int>> const& m1 = vect[0];
+        for(std::size_t i = 0; i < vect.size(); ++i)
+        {
+            for(std::size_t i = 0; i < vect.size(); ++i)
+            {
+
+            }
+        }
+    }
+
+    return std::vector<unsigned int>();
+}
+
+std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& expr)
 {
 	std::vector<unsigned int> result;
-	std::string op;
+	std::string oper;
 
 	while(true)
 	{
-		std::vector<unsigned int> operA;
+        std::vector<unsigned int> unit;
 		std::string token;
 
-		expr >> token;
+        // —читываем токен из потока.
+        expr >> token;
+
 		if(/*expr.eof() ||*/ token.empty())
 			return result;
 
 		if(token == "&&" || token == "||")
-			op = token;
+			oper = token;
 		else if(token == "(")
-			operA = parseSub(fin, expr);
+			unit = parseSub(finIndex, finPosindex, expr);
 		else if(token == ")")
 			return result;
+        else if(token == "\"")
+            unit = parseCitation(finIndex, finPosindex, expr);
 		else
-			operA = parseAtom(fin, token);
+			unit = parseAtom(finIndex, token);
 
-		if(!operA.empty())
-		{
-			std::vector<unsigned int> operB;
+        if(!unit.empty())
+        {
+            std::vector<unsigned int> temp;
 
-			std::sort(operA.begin(), operA.end());
-			std::sort(result.begin(), result.end());
-			
-			if(op == "&&")
-				std::set_intersection(result.begin(), result.end(), operA.begin(), operA.end(), std::back_inserter(operB));
-			else if(op == "||")
-				std::set_union(result.begin(), result.end(), operA.begin(), operA.end(), std::back_inserter(operB));
-			else
-				operB = operA;
+		    std::sort(unit.begin(), unit.end());
+		    std::sort(result.begin(), result.end());
 
-			result = operB;
-		}
+		    if(oper == "&&")
+			    std::set_intersection(result.begin(), result.end(), unit.begin(), unit.end(), std::back_inserter(temp));
+		    else if(oper == "||")
+			    std::set_union(result.begin(), result.end(), unit.begin(), unit.end(), std::back_inserter(temp));
+            else
+                temp = unit;
+
+            result = temp;
+        }
 	}
 }
 
-std::vector<unsigned int> parse(std::ifstream& fin, char const* const expr)
+std::vector<unsigned int> parse(std::ifstream& finIndex, std::ifstream& finPosindex, char const* const expr)
 {
 	std::stringstream ss(expr);
-	return parseSub(fin, ss);
+	return parseSub(finIndex, finPosindex, ss);
 }
