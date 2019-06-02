@@ -117,7 +117,7 @@ bool PositionalIndexMaker::write(std::string const& filename)
 
                     if((lastDocID != docID || j == vect.size() - 1) && !pos.empty())
                     {
-                        unsigned int header[4] = {0x9C9C9C9C, lastDocID, pos.size(), 0};
+                        unsigned int header[4] = {0x9C9C9C9C, iter->first, lastDocID, pos.size()};
                         fout.write((char*)header, sizeof(header));
                         fout.write((char*)&pos[0], sizeof(int) * pos.size());
                         pos.clear();
