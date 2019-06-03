@@ -1,7 +1,7 @@
 ﻿<?php
 	$query = $_GET['query'];
 	print("<b>Запрос:</b> $query<br>");
-	execute('IR4.exe "Corpus/index.dat"', $query);
+	execute('IR5.exe "Corpus/index.dat" "Corpus/posindex.dat"', $query);
 	function execute($exe, $query) {
 		$exe_cmd = escapeshellcmd($exe);
 		$pipe_desc = array(array('pipe', 'r'), array('pipe', 'w'), array('pipe', 'w'));
