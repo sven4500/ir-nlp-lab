@@ -227,7 +227,7 @@ std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& 
     return result;
 }
 
-std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& expr)
+std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosInd, std::ifstream& finTFIDF, std::stringstream& expr)
 {
 	std::vector<unsigned int> result;
 	std::string oper;
@@ -246,11 +246,11 @@ std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPo
 		if(token == "&&" || token == "||")
 			oper = token;
 		else if(token == "(")
-			unit = parseSub(finIndex, finPosindex, expr);
+			unit = parseSub(finIndex, finPosInd, finTFIDF, expr);
 		else if(token == ")")
 			return result;
         else if(token == "\"")
-            unit = parseCitation(finIndex, finPosindex, expr);
+            unit = parseCitation(finIndex, finPosInd, expr);
 		else
 			unit = parseAtom(finIndex, token);
 
@@ -273,8 +273,36 @@ std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPo
 	}
 }
 
-std::vector<unsigned int> parse(std::ifstream& finIndex, std::ifstream& finPosindex, char const* const expr)
+// Обработчик нечёткого выражения.
+std::vector<unsigned int> parseFuzzy(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, std::stringstream& expr)
 {
-	std::stringstream ss(expr);
-	return parseSub(finIndex, finPosindex, ss);
+    std::vector<unsigned int> res;
+    return res;
+}
+
+std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* const expr)
+{
+    std::stringstream ss(expr);
+    std::string token;
+    unsigned int tokenCount = 0;
+    bool isFuzzy = true;
+
+    while(ss >> token && !token.empty())
+    {
+        // Если в запросе присутствутет хотябы один из нижеперечисленных
+        // символов, то запрос считается чётким.
+        if(token == "&&" || token == "||" || token == "\"" || token == "(" || token == "!")
+        {
+            isFuzzy = false;
+            break;
+        }
+        ++tokenCount;
+    }
+
+    // Возвращаем указатель выражения обратно на начало.
+    ss.clear();
+    ss.seekg(0, std::ios::beg);
+
+    // В зависимости от того был ли запрос чётким обрабатываем его.
+    return (tokenCount > 1 && isFuzzy == true) ? parseFuzzy(finInd, finPosInd, finTFIDF, ss) : parseSub(finInd, finPosInd, finTFIDF, ss);
 }

@@ -1,6 +1,6 @@
 ﻿<?php
 	$query = $_GET['query'];
-	execute('IR5.exe "Corpus/index.dat" "Corpus/posindex.dat"', $query);
+	execute('IR8.exe "Corpus/index.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
 	
 	function makeLink($pageId) {
 		echo '<a href="open-page.php?pageId=', $pageId, '">', $pageId ,'</a><br>';
@@ -18,7 +18,7 @@
 		$msTime = fgets($pipes[1]);
 		fclose($pipes[1]);
 		fclose($pipes[2]);
-		
+
 		$ret_val = proc_close($process);
 		
 		echo "<b>Запрос:</b> $query<br>";
