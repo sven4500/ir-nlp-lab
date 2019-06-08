@@ -17,8 +17,8 @@ public:
     virtual bool update(tinyxml2::XMLElement const* element);
     virtual bool write(std::string const& filename);
 
-    unsigned int getDocCount()const;
-    unsigned int getTokenCount()const;
+    unsigned int docCount()const;
+    unsigned int tokenCount()const;
 
 protected:
     struct DocFreq
@@ -34,7 +34,7 @@ protected:
     // Отображение ИД токена на список документов где этот токен встречается.
     // Размер вектора определяет количество документов в которых встречается
     // токен (IDF).
-    std::map<unsigned int, std::vector<DocFreq>> _tok2DocFreq;
+    std::map<unsigned int, std::vector<DocFreq>> _tokFreq;
 
     // Количество документов корпуса.
     unsigned int _docCount;

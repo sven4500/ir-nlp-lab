@@ -27,7 +27,7 @@ void make(XMLDocument* doc, IndexMaker* maker)
 		++pages;
 
 		if(pages % 500 == 0)
-			std::cout << "\rСтатей обработано: " << pages;
+			std::cout << "\rСтраниц обработано: " << pages;
 
 		#if defined(_DEBUG)
 		if(pages == 2000)
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	std::cout << "Обрабатываю файлы: " << argv[1] << " и " << argv[2] << std::endl;
+	std::cout << "Обрабатываю входные файлы: " << argv[1] << " и " << argv[2] << std::endl;
 
     {
         std::cout << std::endl << "Создаю инвертированный индекс..." << std::endl;
@@ -84,10 +84,13 @@ int main(int argc, char** argv)
     }
 
     {
-        std::cout << "Создаю файл метрики TF-IDF" << std::endl;
+        std::cout << std::endl << "Создаю файл метрики TF-IDF..." << std::endl;
 
         TFIDFMaker maker;
         make(&corpusDoc, &maker);
+
+        std::cout << "Количество документов: " << maker.docCount() << std::endl
+            << "Количество токенов: " << maker.tokenCount() << std::endl;
 
         maker.write(argv[5]);
     }
