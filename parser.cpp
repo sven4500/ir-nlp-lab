@@ -136,6 +136,113 @@ std::vector<std::pair<unsigned int, std::vector<unsigned int>>> getDocIDToPos(st
     return docIDToPos;
 }
 
+#pragma pack(push, 1)
+
+// Структура описывает документ в котором встречается запрашиваемый токен. На
+// список таких структур указывает запись в словаре.
+struct DocFreq
+{
+    unsigned int _docID;                // идентификатор документа
+    unsigned short _tokenCount;         // количество вхождений токена
+    unsigned short _tokenTotalCount;    // всего токенов в документе
+};
+
+// Структура описывает обду запись в словаре.
+struct DictItem
+{
+    unsigned int _tokenID;
+    unsigned int _docCount;
+    unsigned int _offBytes;
+    unsigned int _unused;
+};
+
+#pragma pack(pop)
+
+struct TFIDFPairMetric
+{
+    unsigned int _tokenID;
+    unsigned int _docCount;
+    unsigned int _docTotalCount;
+    unsigned int _docID;
+    unsigned int _tokenCount;
+    unsigned int _tokenTotalCount;
+};
+
+struct TFIDFMetric
+{
+    TFIDFMetric(): _tokenID(0), _docCount(0), _docTotalCount(0)
+    {}
+
+    // Метод конвертирует полную метрику в метрику для пары токен - документ.
+    TFIDFPairMetric toPairMetric(unsigned int docID)const
+    {
+        TFIDFPairMetric metric;
+        for(std::size_t i = 0; i < _docFreq.size(); ++i)
+        {
+            if(_docFreq[i]._docID == docID)
+            {
+                metric._tokenID = _tokenID;
+                metric._docCount = _docCount;
+                metric._docTotalCount = _docTotalCount;
+
+                metric._docID = docID;
+                metric._tokenCount = _docFreq[i]._tokenCount;
+                metric._tokenTotalCount = _docFreq[i]._tokenTotalCount;
+                
+                return metric;
+            }
+        }
+        return metric;
+    }
+
+    unsigned int _tokenID;
+    unsigned int _docCount;
+    unsigned int _docTotalCount;
+    std::vector<DocFreq> _docFreq;
+};
+
+TFIDFMetric getTFIDF(std::ifstream& fin, unsigned int tokenID)
+{
+    TFIDFMetric metric /*= {}*/;
+    // Идентификатор токена не может быть нулевым иначе вызов функции
+    // бессмысленный. Однако идентификатор документа вполне может быть и
+    // нулнвым если нас не интересует информация относительно конкретного
+    // документа.
+    if(!fin || tokenID == 0)
+        return metric;
+
+    struct
+    {
+        unsigned int _sign;
+        unsigned int _tokenCount;
+        unsigned int _docCount;
+        unsigned int _unused;
+    }fileHd;
+    fin.read((char*)&fileHd, sizeof(fileHd));
+
+    if(fileHd._sign != 0x8C8C8C8C || fileHd._tokenCount == 0 || fileHd._docCount == 0)
+        return metric;
+
+    DictItem dictItem;
+    for(unsigned int i = 0; i < fileHd._tokenCount; ++i)
+        if(fin.read((char*)&dictItem, sizeof(dictItem)) && dictItem._tokenID == tokenID)
+            break;
+
+    // Если искомый токен не был найден, то возвращаем пустую метрику.
+    if(dictItem._tokenID != tokenID || dictItem._docCount == 0)
+        return metric;
+
+    metric._tokenID = tokenID;
+    metric._docCount = dictItem._docCount;
+    metric._docTotalCount = fileHd._docCount;
+    metric._docFreq.resize(metric._docCount);
+
+    fin.seekg(dictItem._offBytes, std::ios::beg);
+    fin.read((char*)&metric._docFreq[0], sizeof(DocFreq) * metric._docCount);
+
+    return metric;
+}
+
 unsigned int makeTokenID(std::string token)
 {
 	icu::UnicodeString uniToken(token.c_str(), "UTF8");
@@ -227,7 +334,7 @@ std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& 
     return result;
 }
 
-std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosInd, std::ifstream& finTFIDF, std::stringstream& expr)
+std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosInd, std::stringstream& expr)
 {
 	std::vector<unsigned int> result;
 	std::string oper;
@@ -246,7 +353,7 @@ std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPo
 		if(token == "&&" || token == "||")
 			oper = token;
 		else if(token == "(")
-			unit = parseSub(finIndex, finPosInd, finTFIDF, expr);
+			unit = parseSub(finIndex, finPosInd, expr);
 		else if(token == ")")
 			return result;
         else if(token == "\"")
@@ -274,29 +381,31 @@ std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPo
 }
 
 // Обработчик нечёткого выражения.
-std::vector<unsigned int> parseFuzzy(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, std::stringstream& expr)
+std::vector<unsigned int> parseFuzzy(std::ifstream& finInd, std::ifstream& finPosInd, std::stringstream& expr)
 {
     std::vector<unsigned int> res;
     return res;
 }
 
+// Функция ранжирования TF-IDF.
+void range(std::vector<unsigned int>& docs, std::ifstream& finTFIDF, std::vector<unsigned int> const& tokens)
+{
+}
+
 std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* const expr)
 {
     std::stringstream ss(expr);
+    std::vector<unsigned int> tokenID;
     std::string token;
-    unsigned int tokenCount = 0;
     bool isFuzzy = true;
 
     while(ss >> token && !token.empty())
     {
         // Если в запросе присутствутет хотябы один из нижеперечисленных
         // символов, то запрос считается чётким.
-        if(token == "&&" || token == "||" || token == "\"" || token == "(" || token == "!")
-        {
+        if(token == "&&" || token == "||" || token == "!" || token == "\"" || token == "\\" || token == "(" || token == ")")
             isFuzzy = false;
-            break;
-        }
-        ++tokenCount;
+        tokenID.push_back(makeTokenID(token));
     }
 
     // Возвращаем указатель выражения обратно на начало.
@@ -304,5 +413,7 @@ std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd,
     ss.seekg(0, std::ios::beg);
 
     // В зависимости от того был ли запрос чётким обрабатываем его.
-    return (tokenCount > 1 && isFuzzy == true) ? parseFuzzy(finInd, finPosInd, finTFIDF, ss) : parseSub(finInd, finPosInd, finTFIDF, ss);
+    std::vector<unsigned int> docID = (tokenID.size() > 1 && isFuzzy == true) ? parseFuzzy(finInd, finPosInd, ss) : parseSub(finInd, finPosInd, ss);
+    range(docID, finTFIDF, tokenID);
+    return docID;
 }
