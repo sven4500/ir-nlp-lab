@@ -23,17 +23,17 @@ public:
 protected:
     struct DocFreq
     {
+        DocFreq(): _docID(0), _tokenCount(0), _tokenTotalCount(0)
+        {}
+
         unsigned int _docID;
         unsigned short _tokenCount;
         unsigned short _tokenTotalCount;
     };
 
-    // Отображение связывает ИД токена с количеством документов в которых он
-    // встречается.
-    std::map<unsigned int, unsigned int> _tok2CorpFreq;
-
-    // Отображение ИД токена на список документов в которых этот токен
-    // встречается.
+    // Отображение ИД токена на список документов где этот токен встречается.
+    // Размер вектора определяет количество документов в которых встречается
+    // токен (IDF).
     std::map<unsigned int, std::vector<DocFreq>> _tok2DocFreq;
 
     // Количество документов корпуса.

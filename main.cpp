@@ -44,9 +44,9 @@ int main(int argc, char** argv)
 {
 	setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 5)
+	if(argc != 6)
 	{
-		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat" << std::endl;
+		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_TFIDF.dat" << std::endl;
 		return 1;
 	}
 
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
         TFIDFMaker maker;
         make(&corpusDoc, &maker);
 
-        //maker.write(argv[5]);
+        maker.write(argv[5]);
     }
 
     return 0;
