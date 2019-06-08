@@ -9,6 +9,7 @@
 #include "indexMaker.h"
 #include "invertedIndexMaker.h"
 #include "positionalIndexMaker.h"
+#include "TFIDFMaker.h"
 using namespace tinyxml2;
 
 void make(XMLDocument* doc, IndexMaker* maker)
@@ -80,6 +81,15 @@ int main(int argc, char** argv)
             << "Количество уникальных токенов: " << maker.uniqueTokenCount() << std::endl;
 
         maker.write(argv[4]);
+    }
+
+    {
+        std::cout << "Создаю файл метрики TF-IDF" << std::endl;
+
+        TFIDFMaker maker;
+        make(&corpusDoc, &maker);
+
+        //maker.write(argv[5]);
     }
 
     return 0;

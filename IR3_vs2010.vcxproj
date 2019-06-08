@@ -87,12 +87,14 @@
     <ClCompile Include="invertedIndexMaker.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="positionalIndexMaker.cpp" />
+    <ClCompile Include="TFIDFMaker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\crc32\crc32.h" />
     <ClInclude Include="invertedIndexMaker.h" />
     <ClInclude Include="indexMaker.h" />
     <ClInclude Include="positionalIndexMaker.h" />
+    <ClInclude Include="TFIDFMaker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

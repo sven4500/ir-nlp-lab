@@ -23,6 +23,9 @@
     <ClCompile Include="invertedIndexMaker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TFIDFMaker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\crc32\crc32.h">
@@ -35,6 +38,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="invertedIndexMaker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TFIDFMaker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
