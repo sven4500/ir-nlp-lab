@@ -46,7 +46,9 @@ int main(int argc, char** argv)
 	XMLElement const* pageElem = root1->FirstChildElement("page");
 	while(pageElem != 0)
 	{
+        XMLElement const* const titleElem = pageElem->FirstChildElement("title");
 		XMLElement const* const revisionElem = pageElem->FirstChildElement("revision");
+
 		if(revisionElem)
 		{
 			XMLElement const* const idElem = revisionElem->FirstChildElement("id");
@@ -60,6 +62,7 @@ int main(int argc, char** argv)
 				{
 					elem->SetText(textElem->GetText());
 					elem->SetAttribute("id", idElem->GetText());
+                    elem->SetAttribute("title", (titleElem) ? titleElem->GetText() : "");
 					elem->SetAttribute("timestamp", timestampElem->GetText());
 					//elem->SetAttribute("bytes", strlen(textElem->GetText()));
 					root2->InsertEndChild(elem);
