@@ -14,9 +14,11 @@
     <ClCompile Include="..\Common\crc32\crc32.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="range.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parser.h" />
+    <ClInclude Include="range.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3D167EAB-4ACC-4C72-ABEE-4B3641C49939}</ProjectGuid>
