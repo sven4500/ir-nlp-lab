@@ -275,9 +275,21 @@ std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPo
 }
 
 // Обработчик нечёткого выражения.
-std::vector<unsigned int> parseFuzzy(std::ifstream& finInd, std::ifstream& finPosInd, std::stringstream& expr)
+std::vector<unsigned int> parseFuzzy(std::ifstream& finIndex, std::ifstream& finPosIndex, std::stringstream& expr)
 {
-    return std::vector<unsigned int>();
+    std::vector<unsigned int> docID;
+    std::string token;
+
+    while(expr >> token && !token.empty())
+    {
+        std::vector<unsigned int> temp1 = parseAtom(finIndex, token), temp2;
+        std::sort(docID.begin(), docID.end());
+        std::sort(temp1.begin(), temp1.end());
+        std::set_union(docID.begin(), docID.end(), temp1.begin(), temp1.end(), std::back_inserter(temp2));
+        docID.swap(temp2);
+    }
+
+    return docID;
 }
 
 std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* const expr)

@@ -1,5 +1,5 @@
-#include <cmath>
-#include <algorithm>
+#include <cmath> // log
+#include <algorithm> // sort
 #include "range.h"
 
 #pragma pack(push, 1)
@@ -143,7 +143,9 @@ void range(std::vector<unsigned int>& docID, std::vector<unsigned int> const& to
     }
 
     {
-        // Вектор пар <документ, ранг>.
+        // Вектор пар <документ, ранг>. После того как он будет заполнен
+        // каждому документу будет соответствовать определённый ранг.
+        // Отсортировав этот список полцчим ранжированный список документов.
         std::vector<std::pair<unsigned int, double>> rangePair(docID.size(), std::pair<unsigned int, double>(0, 0.0));
 
         for(std::size_t i = 0; i < docID.size(); ++i)
@@ -152,8 +154,8 @@ void range(std::vector<unsigned int>& docID, std::vector<unsigned int> const& to
 
             for(std::size_t j = 0; j < tokenID.size(); ++j)
             {
-                double const TF = (double)metrics[i][j]._tokenCount / metrics[i][j]._tokenTotalCount;
-                double const IDF = log((double)metrics[i][j]._docTotalCount / metrics[i][j]._docCount);
+                double const TF = (metrics[i][j]._tokenTotalCount > 0) ? (double)metrics[i][j]._tokenCount / metrics[i][j]._tokenTotalCount : 0.0;
+                double const IDF = (metrics[i][j]._docTotalCount > 0 && metrics[i][j]._docCount > 0) ? log((double)metrics[i][j]._docTotalCount / metrics[i][j]._docCount) : 0.0;
                 rangePair[i].second += TF * IDF;
             }
         }
