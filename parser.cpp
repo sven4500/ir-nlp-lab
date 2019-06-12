@@ -1,5 +1,6 @@
 #include <unicode/unistr.h>
 #include <vector>
+#include <iostream>
 #include <iterator>
 #include <algorithm>
 #include <sstream>
@@ -190,38 +191,41 @@ std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& 
     std::vector<unsigned int> result;
 
     {
-        std::map<unsigned int, unsigned int> hits;
+        // Пара <>документ, позиция первого слова цитаты>
+        std::map<unsigned long long, unsigned int> hits;
 
         // i номер токена; j номер документа; k номер словопозиции.
-        for(std::size_t i1 = 0, i2 = 1; i2 < vect.size(); ++i1, ++i2)
+        for(std::size_t i1 = 0, i2 = 1; i2 < vect.size(); ++i2)
         {
             for(std::size_t j1 = 0; j1 < vect[i1].second.size(); ++j1)
             {
                 for(std::size_t j2 = 0; j2 < vect[i2].second.size(); ++j2)
                 {
+                    // Оптимизация. Нет смысла сравнивать словопозиции если слова
+                    // находятся в разных документах.
+                    if(vect[i2].second[j2].first != vect[i1].second[j1].first)
+                        continue;
+
                     for(std::size_t k1 = 0; k1 < vect[i1].second[j1].second.size(); ++k1)
                     {
                         for(std::size_t k2 = 0; k2 < vect[i2].second[j2].second.size(); ++k2)
                         {
-                            // Смотрим чтобы токены располагались в разных документах
-                            // а после смотрим чтобы расстояние между
-                            // ними не превышало определённого значения.
-                            // Здесь гарантированно сравниваются разные токены так как i2 = i1 + 1 всегда.
-                            if(vect[i2].second[j2].first == vect[i1].second[j1].first &&
-                                vect[i2].second[j2].second[k2] - vect[i1].second[j1].second[k1] < distance)
-                            {
-                                // Так как документ один и тот же здесь не варжно [i1][j1] или [i2][j2].
-                                ++hits[vect[i1].second[j1].first];
-                            }
+                            unsigned long long const h = ((unsigned long long)vect[i1].second[j1].first << 32) | vect[i1].second[j1].second[k1];
+                            if(vect[i2].second[j2].second[k2] - vect[i1].second[j1].second[k1] < distance)
+                                ++hits[h];
                         }
                     }
                 }
             }
         }
 
-        for(std::map<unsigned int, unsigned int>::const_iterator iter = hits.cbegin(); iter != hits.cend(); ++iter)
-            if(iter->second >= vect.size() - 1)
-                result.push_back(iter->first);
+        std::set<unsigned int> uHits;
+        for(std::map<unsigned long long, unsigned int>::const_iterator iter = hits.cbegin(); iter != hits.cend(); ++iter)
+            if(iter->second == vect.size() - 1)
+                uHits.insert((unsigned int)(iter->first >> 32));
+
+        for(std::set<unsigned int>::const_iterator iter = uHits.begin(), end = uHits.end(); iter != end; ++iter)
+            result.push_back(*iter);
     }
 
     return result;
