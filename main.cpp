@@ -10,6 +10,7 @@
 #include "invertedIndexMaker.h"
 #include "positionalIndexMaker.h"
 #include "TFIDFMaker.h"
+#include "normIndexMaker.h"
 using namespace tinyxml2;
 
 void make(XMLDocument* doc, IndexMaker* maker)
@@ -27,12 +28,12 @@ void make(XMLDocument* doc, IndexMaker* maker)
 		++pages;
 
 		if(pages % 500 == 0)
-			std::cout << "\rСтраниц обработано: " << pages;
+			std::cout << "\rСтраниц обработано " << pages;
 
-		#if defined(_DEBUG)
+		//#if defined(_DEBUG)
 		if(pages == 2000)
 			break;
-		#endif
+		//#endif
 	}
     std::clock_t const timeEnd = clock();
 
@@ -44,9 +45,9 @@ int main(int argc, char** argv)
 {
 	setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 6)
+	if(argc != 7)
 	{
-		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_TFIDF.dat" << std::endl;
+		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat" << std::endl;
 		return 1;
 	}
 
@@ -59,6 +60,19 @@ int main(int argc, char** argv)
 
 	std::cout << "Обрабатываю входные файлы: " << argv[1] << " и " << argv[2] << std::endl;
 
+    /*IndexMaker* const maker[4] = {
+        new InvertedIndexMaker(),
+        new PositionalIndexMaker(),
+        new TFIDFMaker(),
+        new NormIndexMaker()
+    };
+
+    for(unsigned int i = 0; i < sizeof(maker) / sizeof(IndexMaker*); ++i)
+    {
+
+    }*/
+
+    if(argv[3][0] != '0')
     {
         std::cout << std::endl << "Создаю инвертированный индекс..." << std::endl;
 
@@ -71,6 +85,7 @@ int main(int argc, char** argv)
         maker.write(argv[3]);
     }
 
+    if(argv[4][0] != '0')
     {
         std::cout << std::endl << "Создаю координатный индекс..." << std::endl;
 
@@ -83,6 +98,7 @@ int main(int argc, char** argv)
         maker.write(argv[4]);
     }
 
+    if(argv[5][0] != '0')
     {
         std::cout << std::endl << "Создаю файл метрики TF-IDF..." << std::endl;
 
@@ -93,6 +109,16 @@ int main(int argc, char** argv)
             << "Количество токенов: " << maker.tokenCount() << std::endl;
 
         maker.write(argv[5]);
+    }
+
+    if(argv[6][0] != '0')
+    {
+        std::cout << std::endl << "Создаю нормализованный индекс..." << std::endl;
+
+        NormIndexMaker maker;
+        make(&tokensDoc, &maker);
+
+        maker.write(argv[6]);
     }
 
     return 0;

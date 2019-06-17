@@ -86,6 +86,7 @@
     <ClCompile Include="..\Common\crc32\crc32.cpp" />
     <ClCompile Include="invertedIndexMaker.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="normIndexMaker.cpp" />
     <ClCompile Include="positionalIndexMaker.cpp" />
     <ClCompile Include="TFIDFMaker.cpp" />
   </ItemGroup>
@@ -93,6 +94,7 @@
     <ClInclude Include="..\Common\crc32\crc32.h" />
     <ClInclude Include="invertedIndexMaker.h" />
     <ClInclude Include="indexMaker.h" />
+    <ClInclude Include="normIndexMaker.h" />
     <ClInclude Include="positionalIndexMaker.h" />
     <ClInclude Include="TFIDFMaker.h" />
   </ItemGroup>
