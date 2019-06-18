@@ -29,7 +29,7 @@ NormIndexMaker::~NormIndexMaker()
 
 }
 
-void NormIndexMaker::addAsTerm(string const& token, unsigned int const docID)
+void NormIndexMaker::addTokenAsTerm(string const& token, unsigned int const docID)
 {
     // «десь можем сохранить значение end потому что цикл об€зан завершитьс€
     // после модификации карты.
@@ -40,7 +40,10 @@ void NormIndexMaker::addAsTerm(string const& token, unsigned int const docID)
         if(iter == end)
         {
             // ≈сли достигли конца, то добавл€ем термин и ссылку на документ.
-            _termToDocID[token].push_back(docID);
+            pair<string, vector<unsigned int>> p;
+            p.first = token;
+            p.second.push_back(docID);
+            _termToDocID.insert(iter, p);
             break;
         }
         else if(iter->first == token)
@@ -53,9 +56,10 @@ void NormIndexMaker::addAsTerm(string const& token, unsigned int const docID)
         {
             // ƒошли до того момента когда текущий элемент больше токена. Ёто
             // может означать что либо (1) они однокоренные либо
-            // (2) однокоренные с предыдущим элементом.
+            // (2) однокоренные с предыдущим элементом, (3) либо нет.
 
-            // «адаЄм количество байт которые могут несоответствовать.
+            // «адаЄм количество байт которые могут несоответствовать
+            // (3 русских символа UTF-8).
             static size_t const threshold = 6;
             size_t eqSize = 0;
 
@@ -63,24 +67,33 @@ void NormIndexMaker::addAsTerm(string const& token, unsigned int const docID)
             // ≈сли в пределах погрешности, то считаем однокоренными словами.
             if((eqSize = equalSize(token, iter->first)) && (iter->first.size() - eqSize < threshold))
             {
-                std::string const term = token.substr(0, eqSize);
-                iter->second.push_back(docID);
-                _termToDocID[term] = iter->second;
+                pair<string, vector<unsigned int>> p;
+                p.first = token.substr(0, eqSize);
+                p.second = iter->second;
+                p.second.push_back(docID);
+                _termToDocID.insert(iter, p);
                 _termToDocID.erase(iter);
             }
-            else if((iter != begin) && (&(--iter)) && (eqSize = equalSize(token, iter->first)) && (iter->first.size() - eqSize < threshold))
+            // «десь несколько моменто: (1) используем (&(--iter)) чтобы
+            // декрементировать итератор в выражении под if; (2) так как
+            // token заведомо больше чем строка под итератором, то длину нужно
+            // сравнивать именно с токеном.
+            else if((iter != begin) && (&(--iter)) && (eqSize = equalSize(token, iter->first)) && (token.size() - eqSize < threshold))
             {
-                // ќпасный момент! ƒеинкрементировали итератор так что очень
-                // важно завершить цикл иначе зависнем.
-                //iter->second.push_back(docID);
-                std::string const term = token.substr(0, eqSize);
-                iter->second.push_back(docID);
-                _termToDocID[term] = iter->second;
+                pair<string, vector<unsigned int>> p;
+                p.first = token.substr(0, eqSize);
+                p.second = iter->second;
+                p.second.push_back(docID);
+                _termToDocID.insert(iter, p);
                 _termToDocID.erase(iter);
             }
             else
             {
-                _termToDocID[token].push_back(docID);
+                // «десь важно что мы не полагаемс€ на текущий итератор.
+                pair<string, vector<unsigned int>> p;
+                p.first = token;
+                p.second.push_back(docID);
+                _termToDocID.insert(iter, p);
             }
 
             break;
@@ -109,7 +122,7 @@ bool NormIndexMaker::update(tinyxml2::XMLElement const* const elem)
         if(size > 0)
         {
             std::string const token = text.substr(pos, size);
-            addAsTerm(token, docID);
+            addTokenAsTerm(token, docID);
         }
 		pos = end + 1;
 	}

@@ -20,7 +20,7 @@ public:
     virtual bool write(std::string const& filename);
 
 protected:
-    void addAsTerm(std::string const& token, unsigned int docID);
+    void addTokenAsTerm(std::string const& token, unsigned int docID);
 
     std::map<std::string, std::vector<unsigned int>> _termToDocID;
 
