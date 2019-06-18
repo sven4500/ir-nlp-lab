@@ -21,10 +21,10 @@
     <ClInclude Include="range.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3D167EAB-4ACC-4C72-ABEE-4B3641C49939}</ProjectGuid>
+    <ProjectGuid>{65EC0FE9-3B75-4C7F-B982-8745C80FF039}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>IR8</RootNamespace>
-    <ProjectName>IR8</ProjectName>
+    <RootNamespace>NLP3</RootNamespace>
+    <ProjectName>NLP3</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -50,11 +50,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>IR8</TargetName>
+    <TargetName>NLP3</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>IR8</TargetName>
+    <TargetName>NLP3</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
