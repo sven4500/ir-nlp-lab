@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include "normIndexMaker.h"
 #include "crc32.h"
 using namespace std;
@@ -31,75 +32,13 @@ NormIndexMaker::~NormIndexMaker()
 
 void NormIndexMaker::addTokenAsTerm(string const& token, unsigned int const docID)
 {
-    // «десь можем сохранить значение end потому что цикл об€зан завершитьс€
-    // после модификации карты.
-    map<string, vector<unsigned int>>::iterator begin = _termToDocID.begin(), end = _termToDocID.end(), iter = begin;
-
-    while(true)
+    static size_t const threshold = 6;
+    for(size_t i = 0, size = token.size(); i <= threshold && i < size; i += 2)
     {
-        if(iter == end)
-        {
-            // ≈сли достигли конца, то добавл€ем термин и ссылку на документ.
-            pair<string, vector<unsigned int>> p;
-            p.first = token;
-            p.second.push_back(docID);
-            _termToDocID.insert(iter, p);
-            break;
-        }
-        else if(iter->first == token)
-        {
-            // ≈сли уже имеем такой термин то добавл€ем ссылку на документ.
-            iter->second.push_back(docID);
-            break;
-        }
-        else if(token < iter->first)
-        {
-            // ƒошли до того момента когда текущий элемент больше токена. Ёто
-            // может означать что либо (1) они однокоренные либо
-            // (2) однокоренные с предыдущим элементом, (3) либо нет.
-
-            // «адаЄм количество байт которые могут несоответствовать
-            // (3 русских символа UTF-8).
-            static size_t const threshold = 6;
-            size_t eqSize = 0;
-
-            // ѕолучаем размер совпадающей части и вычисл€ем длину хвоста.
-            // ≈сли в пределах погрешности, то считаем однокоренными словами.
-            if((eqSize = equalSize(token, iter->first)) && (iter->first.size() - eqSize < threshold))
-            {
-                pair<string, vector<unsigned int>> p;
-                p.first = token.substr(0, eqSize);
-                p.second.swap(iter->second);
-                p.second.push_back(docID);
-                _termToDocID.insert(iter, p);
-                _termToDocID.erase(iter);
-            }
-            // «десь несколько важных моментов: (1) используем выражение
-            // (&(--iter)) чтобы декрементировать итератор в выражении под if;
-            // (2) разницу считаем от меньшего по длине токена иначе потер€ем
-            // токены.
-            else if((iter != begin) && (&(--iter)) && (eqSize = equalSize(token, iter->first)) && (iter->first.size() - eqSize < threshold))
-            {
-                pair<string, vector<unsigned int>> p;
-                p.first = token.substr(0, eqSize);
-                p.second.swap(iter->second);
-                p.second.push_back(docID);
-                _termToDocID.insert(iter, p);
-                _termToDocID.erase(iter);
-            }
-            else
-            {
-                // «десь важно что мы не полагаемс€ на текущий итератор.
-                pair<string, vector<unsigned int>> p;
-                p.first = token;
-                p.second.push_back(docID);
-                _termToDocID.insert(iter, p);
-            }
-
-            break;
-        }
-
-        ++iter;
+        string const term = token.substr(0, size-i);
+        vector<unsigned int>& vect = _termToDocID[term];
+        if(std::find(vect.begin(), vect.end(), docID) == vect.end())
+            vect.push_back(docID);
     }
 }
 
@@ -145,6 +84,7 @@ bool NormIndexMaker::write(std::string const& filename)
     }
     #endif
 
+    std::cout << "ѕодготавливаю данные дл€ записи..." << std::endl;
     for(map<string, vector<unsigned int>>::iterator iter = _termToDocID.begin(), end = _termToDocID.end(); iter != end; ++iter)
     {
         unsigned int const termID = crc32(0, iter->first.c_str(), iter->first.size());
