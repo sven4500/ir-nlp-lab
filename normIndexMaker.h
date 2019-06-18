@@ -12,17 +12,17 @@ public:
     NormIndexMaker();
     ~NormIndexMaker();
 
-    // Сравнивает две строки и находит количество совпадающих байт.
+    // Сравнивает две строки и находит количество совпадающих байт. Количество
+    // байт возвращает всегда кратное двум.
     static std::size_t equalSize(std::string const& s1, std::string const& s2);
 
     virtual bool update(tinyxml2::XMLElement const* elem);
     virtual bool write(std::string const& filename);
 
 protected:
-    void addTerm(std::string const& term, unsigned int docID);
+    void addAsTerm(std::string const& token, unsigned int docID);
 
     std::map<std::string, std::vector<unsigned int>> _termToDocID;
-    unsigned int _;
 
 };
 

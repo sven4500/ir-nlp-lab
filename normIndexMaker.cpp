@@ -7,20 +7,29 @@ using namespace std;
 
 size_t NormIndexMaker::equalSize(string const& s1, string const& s2)
 {
-    size_t const size = min(s1.size(), s2.size());
-    for(size_t i = 0; i < size; ++i)
-        if(s1[i] != s2[i])
-            return i;
-    return size;
+    size_t const size = (min(s1.size(), s2.size()) / 2) * 2;
+    if(size < 2)
+        return 0;
+
+    size_t i = 0;
+    for(i = 0; i < size; i += 2)
+        if(*(short*)&s1[i] != *(short*)&s2[i])
+            break;
+
+    return i;
 }
 
 NormIndexMaker::NormIndexMaker()
-{}
+{
+
+}
 
 NormIndexMaker::~NormIndexMaker()
-{}
+{
 
-void NormIndexMaker::addTerm(string const& token, unsigned int const docID)
+}
+
+void NormIndexMaker::addAsTerm(string const& token, unsigned int const docID)
 {
     // «десь можем сохранить значение end потому что цикл об€зан завершитьс€
     // после модификации карты.
@@ -100,7 +109,7 @@ bool NormIndexMaker::update(tinyxml2::XMLElement const* const elem)
         if(size > 0)
         {
             std::string const token = text.substr(pos, size);
-            addTerm(token, docID);
+            addAsTerm(token, docID);
         }
 		pos = end + 1;
 	}
