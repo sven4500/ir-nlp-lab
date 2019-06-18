@@ -69,20 +69,20 @@ void NormIndexMaker::addTokenAsTerm(string const& token, unsigned int const docI
             {
                 pair<string, vector<unsigned int>> p;
                 p.first = token.substr(0, eqSize);
-                p.second = iter->second;
+                p.second.swap(iter->second);
                 p.second.push_back(docID);
                 _termToDocID.insert(iter, p);
                 _termToDocID.erase(iter);
             }
-            // Здесь несколько моменто: (1) используем (&(--iter)) чтобы
-            // декрементировать итератор в выражении под if; (2) так как
-            // token заведомо больше чем строка под итератором, то длину нужно
-            // сравнивать именно с токеном.
-            else if((iter != begin) && (&(--iter)) && (eqSize = equalSize(token, iter->first)) && (token.size() - eqSize < threshold))
+            // Здесь несколько важных моментов: (1) используем выражение
+            // (&(--iter)) чтобы декрементировать итератор в выражении под if;
+            // (2) разницу считаем от меньшего по длине токена иначе потеряем
+            // токены.
+            else if((iter != begin) && (&(--iter)) && (eqSize = equalSize(token, iter->first)) && (iter->first.size() - eqSize < threshold))
             {
                 pair<string, vector<unsigned int>> p;
                 p.first = token.substr(0, eqSize);
-                p.second = iter->second;
+                p.second.swap(iter->second);
                 p.second.push_back(docID);
                 _termToDocID.insert(iter, p);
                 _termToDocID.erase(iter);
@@ -135,6 +135,7 @@ bool NormIndexMaker::write(std::string const& filename)
     std::cout << std::endl << "Всего терминов проиндексировано "
         << _termToDocID.size() << std::endl;
 
+    #if defined(_DEBUG)
     {
         std::ofstream fout;
         fout.open("normtokens.txt", std::ios::trunc | std::ios::out);
@@ -142,8 +143,7 @@ bool NormIndexMaker::write(std::string const& filename)
             fout << iter->first << std::endl;
         fout.close();
     }
-
-    return true;
+    #endif
 
     for(map<string, vector<unsigned int>>::iterator iter = _termToDocID.begin(), end = _termToDocID.end(); iter != end; ++iter)
     {

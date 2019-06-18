@@ -30,10 +30,10 @@ void make(XMLDocument* doc, IndexMaker* maker)
 		if(pages % 500 == 0)
 			std::cout << "\rСтраниц обработано " << pages;
 
-		//#if defined(_DEBUG)
+		#if defined(_DEBUG)
 		if(pages == 2000)
 			break;
-		//#endif
+		#endif
 	}
     std::clock_t const timeEnd = clock();
 
