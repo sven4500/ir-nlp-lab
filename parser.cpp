@@ -159,8 +159,20 @@ unsigned int makeTokenID(std::string token)
 
 std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token)
 {
-	unsigned int const tokenID = makeTokenID(token);
-	return getDocID(fin, tokenID);
+    static unsigned int const threshold = 6;
+
+    std::set<unsigned int> docID;
+    for(std::size_t i = 0, size = token.size(); i <= threshold && i < size; i += 2)
+    {
+        std::string const term = token.substr(0, size-i);
+        unsigned int const tokenID = makeTokenID(term);
+        std::vector<unsigned int> vect = getDocID(fin, tokenID);
+        docID.insert(vect.begin(), vect.end());
+    }
+
+    std::vector<unsigned int> vect;
+    std::copy(docID.begin(), docID.end(), std::back_inserter(vect));
+    return vect;
 }
 
 std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& ss)
