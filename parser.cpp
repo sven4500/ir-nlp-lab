@@ -10,35 +10,45 @@
 #include "parser.h"
 #include "range.h"
 
+// Класс который хранит словарь для быстрого доступа.
+class
+{
+public:
+    bool read(std::ifstream& fin)
+    {
+        if(!fin)
+            return false;
+
+        // Проверяем метку индексного файла.
+        fin.read((char*)&_fileHd, sizeof(_fileHd));
+        if(_fileHd[0] != 0xABABABAB)
+            return false;
+
+        unsigned int const lookupBytes = _fileHd[1]-16;
+        _lookup.resize(lookupBytes/8);
+        fin.read((char*)&_lookup[0], lookupBytes);
+
+        return true;
+    }
+
+    unsigned int find(unsigned int termID)const
+    {
+        for(std::size_t i = 0; i < _lookup.size(); ++i)
+            if(_lookup[i].first == termID)
+                return _lookup[i].second;
+        return 0;
+    }
+
+protected:
+    std::vector<std::pair<unsigned int, unsigned int>> _lookup;
+    unsigned int _fileHd[4];
+
+}lookup;
+
 // Функция возвращает список документов в которых встречается термин termID.
 std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID)
 {
-	unsigned int fileHead[4] = {};
-
-	fin.seekg(0, std::ios::beg);
-	fin.read((char*)&fileHead, sizeof(fileHead));
-
-	// Проверяем метку индексного файла.
-	if(fileHead[0] != 0xABABABAB)
-		return std::vector<unsigned int>();
-
-	std::streamoff posAt = 0;
-
-	// Двигаемся по таблице индексов - ищем хэш токена.
-	// TODO: здесь потенциальное узкое место поиска.
-	while(fin.tellg() < fileHead[1])
-	{
-		// По очереди считываем элементы таблицы и ищем наш токен.
-		unsigned int tabElem[2] = {};
-		fin.read((char*)tabElem, sizeof(tabElem));
-
-		if(tabElem[0] == termID)
-		{
-			posAt = tabElem[1];
-			break;
-		}
-	}
-
+	std::streamoff posAt = lookup.find(termID);
 	if(posAt == 0)
 		return std::vector<unsigned int>();
 
@@ -149,8 +159,20 @@ unsigned int makeTokenID(std::string token)
 
 std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token)
 {
-	unsigned int const tokenID = makeTokenID(token);
-	return getDocID(fin, tokenID);
+    static unsigned int const threshold = 6;
+
+    std::set<unsigned int> docID;
+    for(std::size_t i = 0, size = token.size(); i <= threshold && i < size; i += 2)
+    {
+        std::string const term = token.substr(0, size-i);
+        unsigned int const tokenID = makeTokenID(term);
+        std::vector<unsigned int> vect = getDocID(fin, tokenID);
+        docID.insert(vect.begin(), vect.end());
+    }
+
+    std::vector<unsigned int> vect;
+    std::copy(docID.begin(), docID.end(), std::back_inserter(vect));
+    return vect;
 }
 
 std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& ss)
@@ -301,6 +323,9 @@ std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd,
     std::vector<unsigned int> tokenID;
     std::string token;
     bool isFuzzy = true;
+
+    // В начале обработки запроса подгружаем в память словарь.
+    lookup.read(finInd);
 
     while(ss >> token && !token.empty())
     {

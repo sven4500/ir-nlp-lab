@@ -1,6 +1,6 @@
 ﻿<?php
 	$query = $_GET['query'];
-	execute('IR8.exe "Corpus/index.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
+	execute('NLP3.exe "Corpus/normindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
 	
 	function makeLink($pageId) {
 		echo '<a href="open-page.php?pageId=', $pageId, '">', $pageId ,'</a><br>';
