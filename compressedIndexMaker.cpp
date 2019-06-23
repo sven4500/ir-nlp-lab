@@ -70,20 +70,22 @@ bool CompressedIndexMaker::writeFile(std::string const& filename)
         dict[j].first = iter->first;
         dict[j].second = (unsigned int)fout.tellp();
 
-        // Сортируем идентификаторы в возрастающем порядке. Это важно потому
-        // что будем считать дельты между идентификаторами.
-        std::vector<unsigned int>& docID = iter->second;
-        std::sort(docID.begin(), docID.end());
-
+        // Небольшой заголовок показывающий размер блока.
         #pragma pack(push, 1)
         struct
         {
             unsigned short _sign;
-            unsigned short _docIDCount;
-        }termHead = {0xABAB, docID.size()};
+            unsigned short _blockBytes;
+        }termHead = {0xABAB, 0};
         #pragma pack(pop)
 
-        fout.write((char*)&termHead, sizeof(termHead));
+        // Пропускаем заголовок блока так как пока не знаем размер блока.
+        fout.seekp(sizeof(termHead), std::ios::cur);
+
+        // Сортируем идентификаторы в возрастающем порядке. Это важно потому
+        // что будем считать дельты между идентификаторами.
+        std::vector<unsigned int>& docID = iter->second;
+        std::sort(docID.begin(), docID.end());
 
         for(std::size_t i = 0; i < docID.size(); ++i)
         {
@@ -123,12 +125,20 @@ bool CompressedIndexMaker::writeFile(std::string const& filename)
                 // Алгоритм не учитывает порядок байтов (endianness).
                 if(bytes > 0 && bytes <= 4)
                 {
+                    // Раскладываем байты в файле в обратном порядке.
                     for(unsigned int i = 0; i < bytes; ++i)
                         idRaw[i] = (id >> (8 * (bytes - i - 1))) & 0xff;
                     fout.write((char*)&idRaw, bytes);
                 }
             }
         }
+
+        // Теперь знаем где закончился блок. Значит знаем размер блока.
+        termHead._blockBytes = (unsigned int)fout.tellp() - dict[j].second;
+
+        fout.seekp(dict[j].second, std::ios::beg);
+        fout.write((char*)&termHead, sizeof(termHead));
+        fout.seekp(0, std::ios::end);
 
         ++iter;
     }
