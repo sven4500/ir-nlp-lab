@@ -11,6 +11,7 @@
 #include "positionalIndexMaker.h"
 #include "TFIDFMaker.h"
 #include "normIndexMaker.h"
+#include "compressedIndexMaker.h"
 using namespace tinyxml2;
 
 void make(XMLDocument* doc, IndexMaker* maker)
@@ -45,9 +46,9 @@ int main(int argc, char** argv)
 {
 	setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 7)
+	if(argc != 8)
 	{
-		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat" << std::endl;
+		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat _Out_cmpindex.dat" << std::endl;
 		return 1;
 	}
 
@@ -114,11 +115,17 @@ int main(int argc, char** argv)
     if(argv[6][0] != '0')
     {
         std::cout << std::endl << "Создаю нормализованный индекс..." << std::endl;
-
         NormIndexMaker maker;
         make(&tokensDoc, &maker);
-
         maker.write(argv[6]);
+    }
+
+    if(argv[7][0] != '0')
+    {
+        std::cout << std::endl << "Создаю сжатый индекс..." << std::endl;
+        CompressedIndexMaker maker;
+        make(&tokensDoc, &maker);
+        maker.write(argv[7]);
     }
 
     return 0;

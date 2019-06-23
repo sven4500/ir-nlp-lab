@@ -24,6 +24,11 @@ protected:
     std::map<unsigned int, std::vector<unsigned int>> _termToDocID;
     std::size_t _meanChars;
 
+    // Минимальный и максимальный идентификаторы документов. Используется для
+    // сжатия индекса.
+    unsigned int _docIDMin;
+    unsigned int _docIDMax;
+
 };
 
 #endif

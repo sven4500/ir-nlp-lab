@@ -4,11 +4,17 @@
 #include "crc32.h"
 using namespace tinyxml2;
 
-InvertedIndexMaker::InvertedIndexMaker(): _meanChars(0)
-{}
+InvertedIndexMaker::InvertedIndexMaker(): _meanChars(0),
+    _docIDMin(std::numeric_limits<unsigned int>::max()),
+    _docIDMax(std::numeric_limits<unsigned int>::min())
+{
+
+}
 
 InvertedIndexMaker::~InvertedIndexMaker()
-{}
+{
+
+}
 
 void InvertedIndexMaker::clear()
 {
@@ -32,13 +38,16 @@ bool InvertedIndexMaker::update(XMLElement const* elem)
 	if(docID == 0)
 		return false;
 
+    _docIDMin = (docID < _docIDMin) ? docID : _docIDMin;
+    _docIDMax = (docID > _docIDMax) ? docID : _docIDMax;
+
 	std::size_t pos = 0;
 	std::size_t end = 0;
 
 	std::string const text = elem->GetText();
 
-	// tinyxml2 автоматически конвертирует пару CR+LF в LF, поэтому
-	// как разделитель ищем только LF.
+    // tinyxml2 автоматически конвертирует пару CR+LF в LF, поэтому как
+    // разделитель ищем только LF.
 	while((end = text.find_first_of('\n', pos)) != std::string::npos)
 	{
 		std::size_t const size = end - pos;
