@@ -20,11 +20,12 @@ public:
             return false;
 
         // ѕровер€ем метку индексного файла.
-        fin.read((char*)&_fileHd, sizeof(_fileHd));
-        if(_fileHd[0] != 0xABABABAB)
+        fin.seekg(0, std::ios::beg);
+        fin.read((char*)&_fileHead, sizeof(_fileHead));
+        if(_fileHead._sign != 0xDFDFDFDF || _fileHead._tokenCount == 0)
             return false;
 
-        unsigned int const lookupBytes = _fileHd[1]-16;
+        unsigned int const lookupBytes = _fileHead._tokenCount * 8;
         _lookup.resize(lookupBytes/8);
         fin.read((char*)&_lookup[0], lookupBytes);
 
@@ -41,7 +42,14 @@ public:
 
 protected:
     std::vector<std::pair<unsigned int, unsigned int>> _lookup;
-    unsigned int _fileHd[4];
+
+    // «аголовок файла на вс€кий случай сохран€ем.
+    struct
+    {
+        unsigned int _sign;
+        unsigned int _tokenCount;
+        unsigned int _unused[2];
+    }_fileHead;
 
 }lookup;
 
@@ -52,24 +60,31 @@ std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID
 	if(posAt == 0)
 		return std::vector<unsigned int>();
 
-	unsigned int tokenHead[4] = {};
+    #pragma pack(push, 1)
+	struct
+    {
+        unsigned short _sign;
+        unsigned short _blockBytes;
+    }termHead;
+    #pragma pack(pop)
 
 	fin.seekg(posAt, std::ios::beg);
-	fin.read((char*)tokenHead, sizeof(tokenHead));
+	fin.read((char*)&termHead, sizeof(termHead));
 
 	// ѕровер€ем правильность заголовка блока описывающего токен:
 	// сигнатура должна быть на месте, идентификатор токена должен быть
 	// равен запрашиваемому идентификатору и количество документов
 	// тожен не может быть равно нулю.
-	if(tokenHead[0] != 0xAAAAAAAA || tokenHead[1] != termID || tokenHead[2] == 0)
+	if(termHead._sign != 0xABAB || termHead._blockBytes == 0)
 		return std::vector<unsigned int>();
 
-	// Ќа вс€кий случай предохран€емс€ от слишком большого количества документов.
-	std::size_t const docCount = std::min(tokenHead[2], 2500U);
-	std::vector<unsigned int> docID(docCount);
+    // —читываем сырые данные блока.
+    std::vector<unsigned char> bytes;
+    bytes.resize(termHead._blockBytes);
+    fin.read((char*)&bytes[0], termHead._blockBytes);
 
-	fin.read((char*)&docID[0], sizeof(unsigned int) * docCount);
-	return std::vector<unsigned int>(docID.begin(), docID.end());
+	std::vector<unsigned int> docID;
+	return docID;
 }
 
 // ‘ункци€ возвращает отображение документов на список словопозиций дл€ термина termID.
@@ -159,19 +174,8 @@ unsigned int makeTokenID(std::string token)
 
 std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token)
 {
-    static unsigned int const threshold = 6;
-
-    std::set<unsigned int> docID;
-    for(std::size_t i = 0, size = token.size(); i <= threshold && i < size; i += 2)
-    {
-        std::string const term = token.substr(0, size-i);
-        unsigned int const tokenID = makeTokenID(term);
-        std::vector<unsigned int> vect = getDocID(fin, tokenID);
-        docID.insert(vect.begin(), vect.end());
-    }
-
-    std::vector<unsigned int> vect;
-    std::copy(docID.begin(), docID.end(), std::back_inserter(vect));
+    unsigned int const tokenID = makeTokenID(token);
+    std::vector<unsigned int> vect = getDocID(fin, tokenID);
     return vect;
 }
 

@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 
 	if(argc != 4)
 	{
-		std::cout << "IR8.exe _In_NormIndex.dat _In_PosIndex.dat _In_TFIDF.dat" << std::endl;
+		std::cout << "IR6.exe _In_CmpIndex.dat _In_PosIndex.dat _In_TFIDF.dat" << std::endl;
 		return 1;
 	}
 
