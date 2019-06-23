@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 #include "compressedIndexMaker.h"
 
 // Вычисляем ближайшую степерь двойки для значения v.
@@ -14,6 +16,16 @@ unsigned int near2(unsigned int v)
     v |= v >> 16;
     v++;
     return v;
+}
+
+unsigned int bitCount(unsigned int value)
+{
+    // Сперва получаем ближайшее значение больше либо равное текущему которое
+    // является степенью двойки. Потом получаем эту степень и возвращаем.
+    value = near2(value);
+    unsigned int bitCount = 0;
+    while((value /= 2) && ++bitCount);
+    return bitCount;
 }
 
 void CompressedIndexMaker::eraseStopWords(unsigned int const numStopWords)
@@ -34,35 +46,107 @@ bool CompressedIndexMaker::writeFile(std::string const& filename)
     std::ofstream fout;
     fout.open(filename, std::ios::out | std::ios::binary | std::ios::trunc);
 
-    unsigned int docIDBits = 0;
-    {
-        // Вычисляем количество бит на хранение одного идентификатора
-        // документа.
-        unsigned int docIDPower = near2(_docIDMax - _docIDMin);
-        while((docIDPower /= 2) && ++docIDBits);
-        docIDBits = ((docIDBits + 1) / 2) * 2;
-    }
-
-    std::cout << "Минимальный идентификатор документа: " << _docIDMin << std::endl
-        << "Максимальный идентификатор документа: " << _docIDMax << std::endl
-        << "Битность идентификатора: " << docIDBits << std::endl;
+    unsigned int const termCount = _termToDocID.size();
 
     struct
     {
         unsigned int _sign;
         unsigned int _termCount;
-        unsigned int _docIDBits;
-        unsigned int _unused;
-    }fileHead = {0xDFDFDFDF, _termToDocID.size(), docIDBits, 0};
+        unsigned int _unused[2];
+    }fileHead = {0xDFDFDFDF, termCount, 0, 0};
+
+    fout.write((char*)&fileHead, sizeof(fileHead));
+
+    // Пропускаяем пока словарь.
+    fout.seekp(termCount * 8, std::ios::cur);
+
+    std::vector<std::pair<unsigned int, unsigned int>> dict;
+    dict.resize(termCount);
+
+    std::map<unsigned int, std::vector<unsigned int>>::iterator iter = _termToDocID.begin();
+    for(std::size_t j = 0; j < _termToDocID.size(); ++j)
+    {
+        // Сохраняем информацию о термине и смещении в словарь.
+        dict[j].first = iter->first;
+        dict[j].second = (unsigned int)fout.tellp();
+
+        // Сортируем идентификаторы в возрастающем порядке. Это важно потому
+        // что будем считать дельты между идентификаторами.
+        std::vector<unsigned int>& docID = iter->second;
+        std::sort(docID.begin(), docID.end());
+
+        #pragma pack(push, 1)
+        struct
+        {
+            unsigned short _sign;
+            unsigned short _docIDCount;
+        }termHead = {0xABAB, docID.size()};
+        #pragma pack(pop)
+
+        fout.write((char*)&termHead, sizeof(termHead));
+
+        for(std::size_t i = 0; i < docID.size(); ++i)
+        {
+            if(i == 0)
+            {
+                unsigned int id = docID[0];
+                fout.write((char*)&id, 4);
+            }
+            else
+            {
+                unsigned char idRaw[4] = {};
+                unsigned int id = docID[i] - docID[i-1];
+                unsigned int bits = bitCount(id);
+                unsigned int bytes = 0;
+
+                if(bits <= 6)
+                {
+                    id |= 0 << 6;
+                    bytes = 1;
+                }
+                else if(bits <= 14)
+                {
+                    id |= 1 << 14;
+                    bytes = 2;
+                }
+                else if(bits <= 22)
+                {
+                    id |= 2 << 22;
+                    bytes = 3;
+                }
+                else if(bits <= 30)
+                {
+                    id |= 3 << 30;
+                    bytes = 4;
+                }
+
+                // Алгоритм не учитывает порядок байтов (endianness).
+                if(bytes > 0 && bytes <= 4)
+                {
+                    for(unsigned int i = 0; i < bytes; ++i)
+                        idRaw[i] = (id >> (8 * (bytes - i - 1))) & 0xff;
+                    fout.write((char*)&idRaw, bytes);
+                }
+            }
+        }
+
+        ++iter;
+    }
+
+    fout.seekp(16, std::ios::beg);
+    fout.write((char*)&dict[0], termCount * 8);
 
     fout.close();
-    return false;
+    return true;
 }
 
 bool CompressedIndexMaker::write(std::string const& filename)
 {
+    /*std::cout << "Минимальный идентификатор документа: " << _docIDMin << std::endl
+        << "Максимальный идентификатор документа: " << _docIDMax << std::endl;*/
+
     std::cout << "Удаляю из индекса 150 стоп-слов..." << std::endl;
-    //eraseStopWords(150);
+    eraseStopWords(150);
 
     std::cout << "Пишу файл..." << std::endl;
     return writeFile(filename);
