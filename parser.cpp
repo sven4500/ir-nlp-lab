@@ -83,7 +83,31 @@ std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID
     bytes.resize(termHead._blockBytes);
     fin.read((char*)&bytes[0], termHead._blockBytes);
 
+    // «десь будет хранитьс€ идентификаторы документов.
 	std::vector<unsigned int> docID;
+
+    unsigned int lastDocID = (bytes.size() >= 4) ? *(unsigned int*)&bytes[0] : 0;
+    if(lastDocID != 0)
+        docID.push_back(lastDocID);
+
+    for(std::size_t i = 4; i < bytes.size(); ++i)
+    {
+        // »звлекаем первый байт последовательности. » читаем сколько всего
+        // байт было отведено дл€ хранени€ этой дельты (последние два бита
+        // самого старшего байта который хранитс€ первым).
+        unsigned int deltaDocID = bytes[i] & 0x3f;
+        unsigned int bitCount = (bytes[i] & 0xc0) >> 6;
+
+        for(unsigned int j = 0; j < bitCount; ++j)
+        {
+            deltaDocID <<= 8;
+            deltaDocID |= bytes[++i];
+        }
+
+        lastDocID += deltaDocID;
+        docID.push_back(lastDocID);
+    }
+
 	return docID;
 }
 
