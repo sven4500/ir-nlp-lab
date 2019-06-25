@@ -22,8 +22,10 @@ unsigned int bitCount(unsigned int value)
 {
     // Сперва получаем ближайшее значение больше либо равное текущему которое
     // является степенью двойки. Потом получаем эту степень и возвращаем.
+    // Неважно что за число, но для хранения нужно хотябы 1 бит поэтому
+    // переменная bitCount изначально равна 1.
     value = near2(value);
-    unsigned int bitCount = 0;
+    unsigned int bitCount = 1;
     while((value /= 2) && ++bitCount);
     return bitCount;
 }
@@ -89,12 +91,7 @@ bool CompressedIndexMaker::writeFile(std::string const& filename)
 
         for(std::size_t i = 0; i < docID.size(); ++i)
         {
-            if(i == 0)
-            {
-                unsigned int id = docID[0];
-                fout.write((char*)&id, 4);
-            }
-            else
+            if(i != 0)
             {
                 unsigned char idRaw[4] = {};
                 unsigned int id = docID[i] - docID[i-1];
@@ -128,8 +125,19 @@ bool CompressedIndexMaker::writeFile(std::string const& filename)
                     // Раскладываем байты в файле в обратном порядке.
                     for(unsigned int i = 0; i < bytes; ++i)
                         idRaw[i] = (id >> (8 * (bytes - i - 1))) & 0xff;
-                    fout.write((char*)&idRaw, bytes);
+                    fout.write((char*)&idRaw[0], bytes);
                 }
+                else
+                {
+                    // Так как текущий результат зависит от предыдущий более
+                    // нет смысла продолжать.
+                    break;
+                }
+            }
+            else
+            {
+                unsigned int id = docID[0];
+                fout.write((char*)&id, 4);
             }
         }
 
