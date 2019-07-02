@@ -43,6 +43,39 @@ void CompressedIndexMaker::eraseStopWords(unsigned int const numStopWords)
     }
 }
 
+unsigned int CompressedIndexMaker::encodeNumber(unsigned int number, unsigned char* const buf)
+{
+    unsigned int bits = bitCount(number), bytes = 0;
+
+    if(bits <= 6)
+    {
+        number |= 0 << 6;
+        bytes = 1;
+    }
+    else if(bits <= 14)
+    {
+        number |= 1 << 14;
+        bytes = 2;
+    }
+    else if(bits <= 22)
+    {
+        number |= 2 << 22;
+        bytes = 3;
+    }
+    else if(bits <= 30)
+    {
+        number |= 3 << 30;
+        bytes = 4;
+    }
+
+    // Раскладываем байты в файле в обратном порядке. Алгоритм не учитывает
+    // порядок байтов (endianness).
+    for(unsigned int i = 0; i < bytes; ++i)
+        buf[i] = (number >> (8 * (bytes - i - 1))) & 0xff;
+
+    return bytes;
+}
+
 bool CompressedIndexMaker::writeFile(std::string const& filename)
 {
     std::ofstream fout;
@@ -93,46 +126,16 @@ bool CompressedIndexMaker::writeFile(std::string const& filename)
         {
             if(i != 0)
             {
-                unsigned char idRaw[4] = {};
-                unsigned int id = docID[i] - docID[i-1];
-                unsigned int bits = bitCount(id);
-                unsigned int bytes = 0;
+                unsigned char idRaw[10] = {};
+                unsigned int const id = docID[i] - docID[i-1];
+                unsigned int bytes = encodeNumber(id, idRaw);
 
-                if(bits <= 6)
-                {
-                    id |= 0 << 6;
-                    bytes = 1;
-                }
-                else if(bits <= 14)
-                {
-                    id |= 1 << 14;
-                    bytes = 2;
-                }
-                else if(bits <= 22)
-                {
-                    id |= 2 << 22;
-                    bytes = 3;
-                }
-                else if(bits <= 30)
-                {
-                    id |= 3 << 30;
-                    bytes = 4;
-                }
-
-                // Алгоритм не учитывает порядок байтов (endianness).
-                if(bytes > 0 && bytes <= 4)
-                {
-                    // Раскладываем байты в файле в обратном порядке.
-                    for(unsigned int i = 0; i < bytes; ++i)
-                        idRaw[i] = (id >> (8 * (bytes - i - 1))) & 0xff;
-                    fout.write((char*)&idRaw[0], bytes);
-                }
-                else
-                {
-                    // Так как текущий результат зависит от предыдущий более
-                    // нет смысла продолжать.
+                // Так как текущий результат зависит от предыдущий нет смысла
+                // продолжать если вдруг невозможно закодировать значение.
+                if(bytes == 0)
                     break;
-                }
+
+                fout.write((char*)&idRaw[0], bytes);
             }
             else
             {

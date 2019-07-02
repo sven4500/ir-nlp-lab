@@ -12,6 +12,7 @@
 #include "TFIDFMaker.h"
 #include "normIndexMaker.h"
 #include "compressedIndexMaker.h"
+#include "cmpSkipIndexMaker.h"
 using namespace tinyxml2;
 
 void make(XMLDocument* doc, IndexMaker* maker)
@@ -46,9 +47,9 @@ int main(int argc, char** argv)
 {
 	setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 8)
+	if(argc != 9)
 	{
-		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat _Out_cmpindex.dat" << std::endl;
+		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat _Out_cmpindex.dat _Out_cmpskipindex.dat" << std::endl;
 		return 1;
 	}
 
@@ -60,18 +61,6 @@ int main(int argc, char** argv)
 	}
 
 	std::cout << "Обрабатываю входные файлы: " << argv[1] << " и " << argv[2] << std::endl;
-
-    /*IndexMaker* const maker[4] = {
-        new InvertedIndexMaker(),
-        new PositionalIndexMaker(),
-        new TFIDFMaker(),
-        new NormIndexMaker()
-    };
-
-    for(unsigned int i = 0; i < sizeof(maker) / sizeof(IndexMaker*); ++i)
-    {
-
-    }*/
 
     if(argv[3][0] != '0')
     {
@@ -126,6 +115,14 @@ int main(int argc, char** argv)
         CompressedIndexMaker maker;
         make(&tokensDoc, &maker);
         maker.write(argv[7]);
+    }
+
+    if(argv[8][0] != '0')
+    {
+        std::cout << "Создаю сжатый индекс с пропусками..." << std::endl;
+        CmpSkipIndexMaker maker;
+        make(&tokensDoc, &maker);
+        maker.write(argv[8]);
     }
 
     return 0;

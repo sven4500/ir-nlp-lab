@@ -18,8 +18,11 @@ public:
     virtual bool write(std::string const& filename)=0;
 
 protected:
-    IndexMaker(){}
-    ~IndexMaker(){}
+    IndexMaker()
+    {}
+
+    virtual ~IndexMaker()
+    {}
 
 };
 

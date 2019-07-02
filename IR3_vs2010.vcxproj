@@ -84,6 +84,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\crc32\crc32.cpp" />
+    <ClCompile Include="cmpSkipIndexMaker.cpp" />
     <ClCompile Include="compressedIndexMaker.cpp" />
     <ClCompile Include="invertedIndexMaker.cpp" />
     <ClCompile Include="main.cpp" />
@@ -93,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\crc32\crc32.h" />
+    <ClInclude Include="cmpSkipIndexMaker.h" />
     <ClInclude Include="compressedIndexMaker.h" />
     <ClInclude Include="invertedIndexMaker.h" />
     <ClInclude Include="indexMaker.h" />
