@@ -14,6 +14,18 @@ CmpSkipIndexMaker::~CmpSkipIndexMaker()
 
 }
 
+bool CmpSkipIndexMaker::writeOne(std::ofstream& fout, unsigned int const number)
+{
+    unsigned char idRaw[4] = {};
+    unsigned int bytes = encodeNumber(number, idRaw);
+
+    if(bytes == 0)
+        return false;
+
+    fout.write((char*)&idRaw[0], bytes);
+    return true;
+}
+
 bool CmpSkipIndexMaker::writeFile(std::string const& filename)
 {
     std::ofstream fout;
@@ -43,44 +55,32 @@ bool CmpSkipIndexMaker::writeFile(std::string const& filename)
         dict[j].first = iter->first;
         dict[j].second = (unsigned int)fout.tellp();
 
-        // Небольшой заголовок показывающий размер блока.
+        // Сортируем идентификаторы в возрастающем порядке. Это важно потому
+        // что будем считать дельты между идентификаторами.
+        std::vector<unsigned int>& docID = iter->second;
+        std::sort(docID.begin(), docID.end());
+
+        // Небольшой заголовок показывающий размер блока, и расстояние между
+        // блоками ускорения (_stride).
         #pragma pack(push, 1)
         struct
         {
             unsigned short _sign;
             unsigned short _stride;
             unsigned int _blockBytes;
-        }termHead = {0xABAB, 0, 0};
+        }termHead = {0xABAB, (short)std::sqrt((float)docID.size()) + 1, 0};
         #pragma pack(pop)
 
         // Пропускаем заголовок блока так как пока не знаем размер блока.
         fout.seekp(sizeof(termHead), std::ios::cur);
 
-        // Сортируем идентификаторы в возрастающем порядке. Это важно потому
-        // что будем считать дельты между идентификаторами.
-        std::vector<unsigned int>& docID = iter->second;
-        std::sort(docID.begin(), docID.end());
-
         for(std::size_t i = 0; i < docID.size(); ++i)
         {
-            if(i != 0)
-            {
-                unsigned char idRaw[10] = {};
-                unsigned int const id = docID[i] - docID[i-1];
-                unsigned int bytes = encodeNumber(id, idRaw);
+            // Последний элемент списка не может быть прыжком.
+            if(i % termHead._stride == 0 && i != docID.size() - 1)
+                writeOne(fout, (i + termHead._stride < docID.size()) ? docID[i+termHead._stride] : docID.back());
 
-                // Так как текущий результат зависит от предыдущий нет смысла
-                // продолжать если вдруг невозможно закодировать значение.
-                if(bytes == 0)
-                    break;
-
-                fout.write((char*)&idRaw[0], bytes);
-            }
-            else
-            {
-                unsigned int id = docID[0];
-                fout.write((char*)&id, 4);
-            }
+            writeOne(fout, (i != 0) ? docID[i] - docID[i-1] : docID[0]);
         }
 
         // Теперь знаем где закончился блок. Значит знаем размер блока.
