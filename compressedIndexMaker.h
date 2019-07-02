@@ -14,6 +14,14 @@ protected:
     // байта. Метод возвращает количество байт для хранения.
     static unsigned int encodeNumber(unsigned int number, unsigned char* buf);
 
+    // Метод возвращает ближайшую двойку возведённую в степень в сторону
+    // увеличения. Найдено на просторах интернета по адресу:
+    // https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2#
+    static unsigned int near2(unsigned int number);
+
+    // Метод подсчитывает количество бит, которые занимает число.
+    static unsigned int bitCount(unsigned int number);
+
     void eraseStopWords(unsigned int numStopWords);
     bool writeFile(std::string const& filename);
 

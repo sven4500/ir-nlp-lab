@@ -4,9 +4,7 @@
 #include <cassert>
 #include "compressedIndexMaker.h"
 
-// Вычисляем ближайшую степерь двойки для значения v.
-// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2#
-unsigned int near2(unsigned int v)
+unsigned int CompressedIndexMaker::near2(unsigned int v)
 {
     v--;
     v |= v >> 1;
@@ -18,7 +16,7 @@ unsigned int near2(unsigned int v)
     return v;
 }
 
-unsigned int bitCount(unsigned int value)
+unsigned int CompressedIndexMaker::bitCount(unsigned int value)
 {
     // Сперва получаем ближайшее значение больше либо равное текущему которое
     // является степенью двойки. Потом получаем эту степень и возвращаем.
@@ -26,7 +24,7 @@ unsigned int bitCount(unsigned int value)
     // переменная bitCount изначально равна 1.
     value = near2(value);
     unsigned int bitCount = 1;
-    while((value /= 2) && ++bitCount);
+    while((value >>= 1) && ++bitCount);
     return bitCount;
 }
 
