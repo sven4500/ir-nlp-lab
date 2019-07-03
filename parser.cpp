@@ -53,6 +53,26 @@ protected:
 
 }lookup;
 
+// ћетод производит преобразование числа и возвращает количество байт которые
+// занимает число в сжатом виде.
+unsigned int decodeNumber(unsigned char const* in, unsigned int* const pCount)
+{
+    // ¬ старших двух битах хранитс€ количество байт которыми закодировано число.
+    unsigned int const count = (*in) >> 6;
+    unsigned int out = (*in) & 0x3f;
+
+    for(unsigned int i = 0; i < count; ++i)
+    {
+        out <<= 8;
+        out |= *(++in);
+    }
+
+    if(pCount)
+        *pCount = count + 1;
+
+    return out;
+}
+
 // ‘ункци€ возвращает список документов в которых встречаетс€ термин termID.
 std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID)
 {
@@ -64,8 +84,10 @@ std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID
 	struct
     {
         unsigned short _sign;
+        unsigned short _termID; // нижние 16-бит идентификатора термина
+        unsigned short _stride;
         unsigned short _blockBytes;
-    }termHead;
+    }termHead = {};
     #pragma pack(pop)
 
 	fin.seekg(posAt, std::ios::beg);
@@ -75,37 +97,33 @@ std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID
 	// сигнатура должна быть на месте, идентификатор токена должен быть
 	// равен запрашиваемому идентификатору и количество документов
 	// тожен не может быть равно нулю.
-	if(termHead._sign != 0xABAB || termHead._blockBytes == 0)
+	if(termHead._sign != 0xABAB || termHead._blockBytes == 0 || termHead._stride == 0 || termHead._termID != (termID & 0xffff))
 		return std::vector<unsigned int>();
 
     // —читываем сырые данные блока.
-    std::vector<unsigned char> bytes;
-    bytes.resize(termHead._blockBytes);
+    std::vector<unsigned char> bytes(termHead._blockBytes);
     fin.read((char*)&bytes[0], termHead._blockBytes);
 
     // «десь будет хранитьс€ идентификаторы документов.
-	std::vector<unsigned int> docID;
+    std::vector<unsigned int> docID;
 
-    unsigned int lastDocID = (bytes.size() >= 4) ? *(unsigned int*)&bytes[0] : 0;
-    if(lastDocID != 0)
-        docID.push_back(lastDocID);
-
-    for(std::size_t i = 4; i < bytes.size(); ++i)
+    unsigned int lastDocID = 0;
+    for(std::size_t i = 0, j = 0; i < bytes.size(); ++j)
     {
-        // »звлекаем первый байт последовательности. » читаем сколько всего
-        // байт было отведено дл€ хранени€ этой дельты (последние два бита
-        // самого старшего байта который хранитс€ первым).
-        unsigned int deltaDocID = bytes[i] & 0x3f;
-        unsigned int bitCount = (bytes[i] & 0xc0) >> 6;
+        unsigned int byteCount = 0;
 
-        for(unsigned int j = 0; j < bitCount; ++j)
+        if(j % termHead._stride == 0)
         {
-            deltaDocID <<= 8;
-            deltaDocID |= bytes[++i];
+            unsigned int skip = decodeNumber(&bytes[i], &byteCount);
+            docID.push_back(skip);
+        }
+        else
+        {
+            lastDocID += decodeNumber(&bytes[i], &byteCount);
+            docID.push_back(lastDocID);
         }
 
-        lastDocID += deltaDocID;
-        docID.push_back(lastDocID);
+        i += byteCount;
     }
 
 	return docID;
@@ -371,6 +389,6 @@ std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd,
 
     // ¬ зависимости от того был ли запрос чЄтким обрабатываем его.
     std::vector<unsigned int> docID = (tokenID.size() > 1 && isFuzzy == true) ? parseFuzzy(finInd, finPosInd, ss) : parseSub(finInd, finPosInd, ss);
-    range(docID, tokenID, finTFIDF);
+    //range(docID, tokenID, finTFIDF);
     return docID;
 }
