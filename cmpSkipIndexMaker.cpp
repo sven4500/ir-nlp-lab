@@ -75,15 +75,19 @@ bool CmpSkipIndexMaker::writeFile(std::string const& filename)
         // Пропускаем заголовок блока так как пока не знаем размер блока.
         fout.seekp(sizeof(termHead), std::ios::cur);
 
-        for(std::size_t i = 0; i < docID.size(); ++i)
+        for(std::size_t i = 0, k = 0; i < docID.size(); ++i)
         {
             // Начальный и последний элемент списка не может быть
             // указателем прыжка. Последний указатель прыжка всегда
             // указывает на крайний элемент списка.
-            if(i % termHead._stride == 0 && i != 0 && i != docID.size() - 1)
+            if(k % termHead._stride == 0)
+            {
                 writeOne(fout, (i + termHead._stride < docID.size()) ? docID[i+termHead._stride] : docID.back());
+                ++k;
+            }
 
             writeOne(fout, (i != 0) ? docID[i] - docID[i-1] : docID[0]);
+            ++k;
         }
 
         // Теперь знаем где закончился блок. Значит знаем размер блока.
