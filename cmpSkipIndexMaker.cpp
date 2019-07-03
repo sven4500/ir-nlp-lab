@@ -66,9 +66,10 @@ bool CmpSkipIndexMaker::writeFile(std::string const& filename)
         struct
         {
             unsigned short _sign;
+            unsigned short _termID;
             unsigned short _stride;
-            unsigned int _blockBytes;
-        }termHead = {0xABAB, (short)std::sqrt((float)docID.size()) + 1, 0};
+            unsigned short _blockBytes;
+        }termHead = {0xABAB, dict[j].first & 0xffff, (short)std::sqrt((float)docID.size()) + 1, 0};
         #pragma pack(pop)
 
         // Пропускаем заголовок блока так как пока не знаем размер блока.
@@ -76,8 +77,10 @@ bool CmpSkipIndexMaker::writeFile(std::string const& filename)
 
         for(std::size_t i = 0; i < docID.size(); ++i)
         {
-            // Последний элемент списка не может быть прыжком.
-            if(i % termHead._stride == 0 && i != docID.size() - 1)
+            // Начальный и последний элемент списка не может быть
+            // указателем прыжка. Последний указатель прыжка всегда
+            // указывает на крайний элемент списка.
+            if(i % termHead._stride == 0 && i != 0 && i != docID.size() - 1)
                 writeOne(fout, (i + termHead._stride < docID.size()) ? docID[i+termHead._stride] : docID.back());
 
             writeOne(fout, (i != 0) ? docID[i] - docID[i-1] : docID[0]);
@@ -90,8 +93,13 @@ bool CmpSkipIndexMaker::writeFile(std::string const& filename)
         fout.write((char*)&termHead, sizeof(termHead));
         fout.seekp(0, std::ios::end);
 
+        if(j % 10000 == 0)
+            std::cout << '\r' << j << '/' << _termToDocID.size();
+
         ++iter;
     }
+
+    std::cout << std::endl;
 
     fout.seekp(16, std::ios::beg);
     fout.write((char*)&dict[0], termCount * 8);
