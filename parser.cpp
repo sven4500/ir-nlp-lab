@@ -241,6 +241,11 @@ std::vector<unsigned int> unite(std::vector<unsigned int> const& a, std::vector<
     return std::vector<unsigned int>(c.begin(), c.end());
 }
 
+DocIDList unite(DocIDList const& a, DocIDList const& b)
+{
+    return DocIDList(unite(a._list, b._list, a._stride, b._stride), 0);
+}
+
 // as, bs расстояние между метками для вектора a и b соответственно.
 std::vector<unsigned int> intersect(std::vector<unsigned int> const& a, std::vector<unsigned int> const& b, unsigned int const as = 0, unsigned int const bs = 0)
 {
@@ -277,6 +282,11 @@ std::vector<unsigned int> intersect(std::vector<unsigned int> const& a, std::vec
         }
     }
     return c;
+}
+
+DocIDList intersect(DocIDList const& a, DocIDList const& b)
+{
+    return DocIDList(intersect(a._list, b._list, a._stride, b._stride), 0);
 }
 
 DocIDList parseAtom(std::ifstream& fin, std::string const& token)
@@ -407,13 +417,11 @@ DocIDList parseSub(std::ifstream& finIndex, std::ifstream& finPosInd, std::strin
 
 		    if(oper == "&&")
             {
-                temp._list = intersect(result._list, unit._list, result._stride, unit._stride);
-                temp._stride = 0;
+                temp = intersect(result, unit);
             }
 		    else if(oper == "||")
             {
-                temp._list = unite(result._list, unit._list, result._stride, unit._stride);
-                temp._stride = 0;
+                temp = unite(result, unit);
             }
             else
             {
@@ -428,19 +436,16 @@ DocIDList parseSub(std::ifstream& finIndex, std::ifstream& finPosInd, std::strin
 // Обработчик нечёткого выражения.
 DocIDList parseFuzzy(std::ifstream& finIndex, std::ifstream& finPosIndex, std::stringstream& expr)
 {
-    std::vector<unsigned int> docID;
+    DocIDList list;
     std::string token;
 
     while(expr >> token && !token.empty())
     {
-        std::vector<unsigned int> temp1 /*= parseAtom(finIndex, token)*/, temp2;
-        std::sort(docID.begin(), docID.end());
-        std::sort(temp1.begin(), temp1.end());
-        std::set_union(docID.begin(), docID.end(), temp1.begin(), temp1.end(), std::back_inserter(temp2));
-        docID.swap(temp2);
+        DocIDList const temp = parseAtom(finIndex, token);
+        list = unite(list, temp);
     }
 
-    return DocIDList();
+    return list;
 }
 
 std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* const expr)
@@ -469,6 +474,13 @@ std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd,
 
     // В зависимости от того был ли запрос чётким обрабатываем его.
     DocIDList list = (tokenID.size() > 1 && isFuzzy == true) ? parseFuzzy(finInd, finPosInd, ss) : parseSub(finInd, finPosInd, ss);
-    //range(docID, tokenID, finTFIDF);
-    return list._list;
+
+    std::vector<unsigned int> docID;
+    docID.reserve(list._list.size());
+    for(std::size_t i = 0; i < list._list.size(); ++i)
+        if(list._stride < 2 || (i % list._stride != 0 && list._stride >= 2))
+            docID.push_back(list._list[i]);
+
+    range(docID, tokenID, finTFIDF);
+    return docID;
 }
