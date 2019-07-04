@@ -214,6 +214,56 @@ unsigned int makeTokenID(std::string token)
 	return hash;
 }
 
+std::vector<unsigned int> unite(std::vector<unsigned int> const& a, std::vector<unsigned int> const& b, int const as = 0, int const bs = 0)
+{
+    std::set<unsigned int> c;
+    for(std::size_t i = 0; i < a.size(); ++i)
+        if(i % as != 0 && as > 1)
+            c.insert(a[i]);
+    for(std::size_t i = 0; i < b.size(); ++i)
+        if(i % bs != 0 && bs > 1)
+            c.insert(b[i]);
+    return std::vector<unsigned int>(c.begin(), c.end());
+}
+
+// as, bs расстояние между метками для вектора a и b соответственно.
+std::vector<unsigned int> intersect(std::vector<unsigned int> const& a, std::vector<unsigned int> const& b, int const as = 0, int const bs = 0)
+{
+    std::vector<unsigned int> c;
+    std::size_t const size = std::min(a.size(), b.size());
+    for(std::size_t i = 0, j = 0; i < size && j < size; )
+    {
+        if(i % as == 0 && as > 1 && j % bs == 0 && bs > 1)
+        {
+            ++i;
+            ++j;
+        }
+        else if(i % as == 0 && as > 1)
+        {
+            i += (a[i] < b[j]) ? as : 1;
+        }
+        else if(j % bs == 0 && bs > 1)
+        {
+            j += (a[i] > b[j]) ? bs : 1;
+        }
+        else if(a[i] < b[j])
+        {
+            ++i;
+        }
+        else if(a[i] > b[j])
+        {
+            ++j;
+        }
+        else if(a[i] == b[j])
+        {
+            c.push_back(a[j]);
+            ++i;
+            ++j;
+        }
+    }
+    return c;
+}
+
 std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token)
 {
     unsigned int const tokenID = makeTokenID(token);
