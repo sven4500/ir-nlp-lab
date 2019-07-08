@@ -57,6 +57,8 @@ int main(int argc, char** argv)
 		std::cout << docID[i] << ' ';
 	std::cout << std::endl;
 
+    std::cout << (double)skip / (double)skipCount << std::endl;
+
 	unsigned int const msTimeElapsed = (unsigned int)(((double)(clockEnd - clockBegin) / CLOCKS_PER_SEC) * 1000.0);
 	std::cout << msTimeElapsed << std::endl;
 

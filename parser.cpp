@@ -10,6 +10,9 @@
 #include "parser.h"
 #include "range.h"
 
+unsigned int skip = 0;
+unsigned int skipCount = 0;
+
 //  ласс который хранит словарь дл€ быстрого доступа.
 class
 {
@@ -261,10 +264,22 @@ std::vector<unsigned int> intersect(std::vector<unsigned int> const& a, std::vec
         else if(i % as == 0 && as > 1)
         {
             i += (a[i] < b[j]) ? as : 1;
+
+            if(a[i] < b[j])
+            {
+                skip += as;
+                skipCount += 1;
+            }
         }
         else if(j % bs == 0 && bs > 1)
         {
             j += (a[i] > b[j]) ? bs : 1;
+
+            if(a[i] > b[j])
+            {
+                skip += bs;
+                skipCount += 1;
+            }
         }
         else if(a[i] < b[j])
         {
