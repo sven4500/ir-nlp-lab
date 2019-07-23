@@ -1,21 +1,57 @@
 ﻿<?php
+	// Некоторые глобальные пути к файлам.
+	$corpusPath = 'Corpus/corpus.xml';
+	$cmpIndexPath = 'Corpus/cmpskipindex.dat';
+	$posIndexPath = 'Corpus/posindex.dat';
+	$TFIDFPath = 'Corpus/tfidf.dat';
+	
 	$query = $_GET['query'];
 	execute('IR7.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
 	
-	function getTitle($pageId) {
-		return $pageId;
+	// Функция производит извлечение данных из корпуса документов в XML файле.
+	// Возвращает массив пар <заголовок, сниппет>.
+	function readXML($docId) {
+		// Здесь нужно определить переменную как глобальную иначе будет
+		// использована локальная версия пустой строки.
+		global $corpusPath;
+		
+		// Заранее подготавливаем массив пар <заголовок, сниппет>.
+		$docCount = count($docId);
+		$result = array_fill(0, $docCount, [0, "", ""]);
+		
+		// Создаём XML парсер.
+		$xml = new XMLReader();
+		$xml->open($corpusPath);
+
+		while($docCount > 0 && $xml->read()) {
+			if($xml->name == 'page') {
+				// Извлекаем из атрибута идентификатор документа и ищем его
+				// среди ещё не найденных идентификаторов.
+				$id = $xml->getAttribute('id');
+				$index = array_search($id, $docId);
+				
+				if($index != null) {
+					$title = $xml->getAttribute('title');
+					$result[$index][0] = $docId[$index];
+					$result[$index][1] = $title;
+					$result[$index][2] = 'Очень скоро здесь будет сниппет...';
+					
+					// Удаляем найденный идентификатор документа из массива и
+					// уменьшаем количество документов которые осталось найти.
+					//unset($docId[$index]);
+					//--$docCount;
+				}
+			}
+		}
+		
+		$xml->close();
+		return $result;
 	}
 	
-	function getSnippet($pageId) {
-		return $pageId;
-	}
-	
-	function makeLink($pageId) {
-		$title = getTitle($pageId);
-		$snippet = getSnippet($pageId);
+	function makeLink($pageInfo) {
 		echo '<div style="border:1px solid #A9A9A9;">';
-		echo '<a href="open-page.php?pageId=', $pageId, '">', $title ,'</a><br>';
-		echo '<br>', $snippet, '</div><br>';
+		echo '<a href="open-page.php?pageId=', $pageInfo[0], '">', $pageInfo[1] ,'</a><br>';
+		echo '<br>', $pageInfo[2], '</div><br>';
 	}
 	
 	function execute($exe, $query) {
@@ -51,7 +87,8 @@
 		echo "<b>Количество документов:</b> $docCount<br>";
 		echo "<br>";
 
+		$docData = readXML($result);
 		for($i = 0; $i < $c; ++$i)
-			makeLink($result[$i]);
+			makeLink($docData[$i]);
 	}
 ?>
