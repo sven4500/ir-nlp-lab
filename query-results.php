@@ -4,9 +4,28 @@
 	$cmpIndexPath = 'Corpus/cmpskipindex.dat';
 	$posIndexPath = 'Corpus/posindex.dat';
 	$TFIDFPath = 'Corpus/tfidf.dat';
+	$snippetChars = 600;
 	
 	$query = $_GET['query'];
 	execute('IR7.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
+	
+	function makeSnippet($text, $terms) {
+		// TODO: всё в нижний регистр, избавиться от надоедливых символов плюс
+		// подсветить искомые слова.
+		global $snippetChars;
+		$len = strlen($text);
+		$pos = array();
+		$i = 0;
+		foreach($terms as $term) {
+			$p = strpos($text, $term);
+			$pos[$i++] = ($p !== false && $p < $len) ? $p : $len;
+		}
+		$pos = min($pos);
+		//if($pos == $len)
+			//$pos = 0;
+		//var_dump($pos);
+		return substr($text, $pos, min($len - $pos, $snippetChars));
+	}
 	
 	// Функция производит извлечение данных из корпуса документов в XML файле.
 	// Возвращает массив пар <заголовок, сниппет>.
@@ -14,49 +33,42 @@
 		// Здесь нужно определить переменную как глобальную иначе будет
 		// использована локальная версия пустой строки.
 		global $corpusPath;
-		
+		global $query;
+
 		// Заранее подготавливаем массив пар <заголовок, сниппет>.
 		$docCount = count($docId);
 		$result = array_fill(0, $docCount, [0, "", ""]);
 		
-		//var_dump($docId, '<br><br>');
-		//var_dump($result, '<br><br>');
-		
+		// Сперва удаляем все пробелы и служебные символы. Потом удаляем все
+		// нулевые слова. Регулярное выражение совместимое с Perl (preg_*).
+		$terms = preg_split('/(\s+)|([&\|\/])|([0-9])/', $query);
+		$terms = array_filter($terms, 'strlen');
+		//var_dump($terms);
+
 		// Создаём XML парсер.
 		$xml = new XMLReader();
 		$xml->open($corpusPath);
-		
-		// Находим первый элемент page.
-		//while($xml->read() && $xml->name != 'page');
 
 		while($docCount > 0 && $xml->read()) {
-			if(/*$xml->nodeType != XMLReader::ELEMENT ||*/ $xml->name != 'page')
+			if($xml->nodeType != XMLReader::ELEMENT || $xml->name != 'page')
 				continue;
-			
-			//$xml->moveToElement();
-			//$node = new SimpleXMLElement($xml->readOuterXML());
-			//$id = $node->attributes()->id;
-			
+
 			// Извлекаем из атрибута идентификатор документа и ищем его
 			// среди списка идентификаторов поисковой выдачи.
 			$id = $xml->getAttribute('id');
 			$index = array_search($id, $docId);
 
+			// Проверяем значение индекса и его тип.
 			if($index !== false) {
 				$title = $xml->getAttribute('title');
-				//$text = $xml->readString();
+				$text = $xml->readString();
 
 				$result[$index][0] = $docId[$index];
 				$result[$index][1] = $title;
-				$result[$index][2] = 'Очень скоро здесь будет сниппет...';
-				
-				// Удаляем найденный идентификатор документа из массива и
-				// уменьшаем количество документов которые осталось найти.
-				//unset($docId[$index]);
+				$result[$index][2] = makeSnippet($text, $terms);
+
 				--$docCount;
 			}
-
-			$xml->next();
 		}
 		
 		//var_dump($result);
@@ -65,9 +77,9 @@
 	}
 	
 	function makeLink($pageInfo) {
-		echo '<div style="border:1px solid #A9A9A9;">';
-		echo '<a href="open-page.php?pageId=', $pageInfo[0], '">', $pageInfo[1], '</a> [', $pageInfo[0], ']<br>';
-		echo '<br>', $pageInfo[2], '</div><br>';
+		echo '<div style="border:1px solid #A9A9A9;">',
+			'<a href="open-page.php?pageId=', $pageInfo[0], '">', $pageInfo[1], '</a> [', $pageInfo[0], ']<br>',
+			'<br>', $pageInfo[2], '</div><br>';
 	}
 	
 	function execute($exe, $query) {
@@ -82,7 +94,7 @@
 		// Программа построчно выводит список идентификаторов документов
 		// удовлетворяющих поисковому запросу разделённых пробелом, среднюю
 		// длину прыжка и потраченное на выполнение запроса время.
-		$result = fgets($pipes[1]);
+		$docId = fgets($pipes[1]);
 		$leap = fgets($pipes[1]);
 		$msTime = fgets($pipes[1]);
 		
@@ -93,24 +105,26 @@
 
 		// Программа выдаёт список идентификаторов документов в виде строки,
 		// поэтому разбиваем строку на элементы массива по пробелу.
-		$result = explode(" ", $result);
-		//var_dump($result, '<br><br>');
+		$docId = explode(" ", $docId);
+		//var_dump($docId);
 		
 		// Считаем количество документов и ограничиваемся первыми 50.
-		$docCount = count($result);
+		$docCount = count($docId);
 		$c = min($docCount, 50);
 
 		// Отбрасываем ненужные документы.
-		$result = array_slice($result, 0, $c);
-		//var_dump($result, '<br><br>');
+		$docId = array_slice($docId, 0, $c);
+		//var_dump($docId);
 
-		echo "<b>Запрос:</b> $query<br>";
-		echo "<b>Средний размер прыжка:</b> $leap<br>";
-		echo "<b>Время поиска (мс):</b> $msTime<br>";
-		echo "<b>Количество документов:</b> $docCount<br>";
-		echo "<br>";
+		echo "<b>Запрос:</b> $query<br>",
+			"<b>Средний размер прыжка:</b> $leap<br>",
+			"<b>Время поиска (мс):</b> $msTime<br>",
+			"<b>Количество документов:</b> $docCount<br>",
+			"<br>";
 
-		$docData = readXML($result);
+		// Функция читает XML и возвращает для каждого документа его заголовок
+		// и сниппет. Далее создаём ссылки.
+		$docData = readXML($docId);
 		for($i = 0; $i < $c; ++$i)
 			makeLink($docData[$i]);
 	}
