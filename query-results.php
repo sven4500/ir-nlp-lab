@@ -4,40 +4,70 @@
 	$cmpIndexPath = 'Corpus/cmpskipindex.dat';
 	$posIndexPath = 'Corpus/posindex.dat';
 	$TFIDFPath = 'Corpus/tfidf.dat';
-	$snippetChars = 400;
+	$snippetChars = 150;
 	
 	$query = $_GET['query'];
 	execute('IR7.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
 	
+	// Версия substr_replace для многобайтовой кодировки (mb_*).
+	function mb_substr_insert($string, $what, $where) {
+		$firstString = mb_substr($string, 0, $where, "UTF-8");
+		$secondString = mb_substr($string, $where, mb_strlen($string) - $where, "UTF-8");
+		return $firstString . $what . $secondString;
+	}
+	
 	function makeSnippet($text, $terms) {
-		// TODO: всё в нижний регистр, избавиться от надоедливых символов плюс
-		// подсветить искомые слова.
 		global $snippetChars;
-
+		
+		// Удаляем HTML теги, которые могут присутствовать.
+		$text = strip_tags($text);
+		
 		// Удаляем назойливые символы мешающие нормально воспринимать текст.
-		$searchFor = array("[", "]", "{", "}", "|");
+		$searchFor = array('[', ']', '{', '}', '|');
 		$replaceTo = array(' ', ' ', ' ', ' ', ' ');
 		$text = str_replace($searchFor, $replaceTo, $text);
 		
 		// Пока всё в нижний регистр.
 		$text = mb_strtolower($text);
 
-		$len = strlen($text);
+		// Здесь храним положение терминов в тексте. Для каждого термина его
+		// первое встресное положение.
 		$pos = array();
 		$i = 0;
 		
 		foreach($terms as $term) {
-			$p = strpos($text, $term);
-			$pos[$i++] = ($p !== false && $p < $len) ? $p : $len;
+			$lastPos = 0;
+			$term = mb_strtolower($term);
+			
+			while(($lastPos = mb_strpos($text, $term, $lastPos)) !== false) {
+				if($pos[$i] == null)
+					$pos[$i] = $lastPos;
+				
+				$tagOpen = '<b><u>';
+				$tagClose = '</u></b>';
+				
+				$text = mb_substr_insert($text, $tagOpen, $lastPos);
+				$lastPos += mb_strlen($term) + mb_strlen($tagOpen);
+				
+				$text = mb_substr_insert($text, $tagClose, $lastPos);
+				$lastPos += mb_strlen($tagClose);
+			}
+
+			// $pos должени иметь хотябы одно значение.
+			if($pos[$i] == null)
+				$pos[$i] = 0;
+			
+			++$i;
 		}
-		
+
+		// Из всех найденных терминов ищем ближайший к началу документа.
 		$pos = min($pos);
-		//if($pos == $len)
-			//$pos = 0;
-		//var_dump($pos);
 		
 		// Используем mb_substr чтобы корректно ограничить строку для UTF-8.
-		$text = mb_substr($text, $pos, min($len - $pos, $snippetChars));
+		$textLength = mb_strlen($text);
+		$snippetLength = min($textLength - $pos, $snippetChars);
+		$text = mb_substr($text, $pos, $snippetLength, "UTF-8");
+		//var_dump($snippetLength);
 		
 		return $text;
 	}
@@ -85,16 +115,15 @@
 				--$docCount;
 			}
 		}
-		
-		//var_dump($result);
+
 		$xml->close();
 		return $result;
 	}
 	
 	function makeLink($pageInfo) {
-		echo '<div style="border:1px solid #A9A9A9;">',
-			'<a href="open-page.php?pageId=', $pageInfo[0], '">', $pageInfo[1], '</a> [', $pageInfo[0], ']<br>',
-			'<br>', $pageInfo[2], '</div><br>';
+		echo '<p><div style="border:1px solid #A9A9A9;">',
+			'<a href="open-page.php?pageId=', $pageInfo[0], '">', $pageInfo[1], '</a> [', $pageInfo[0], ']',
+			'<p>', $pageInfo[2], '</p></div></p>';
 	}
 	
 	function execute($exe, $query) {
