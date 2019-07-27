@@ -4,7 +4,7 @@
 	$cmpIndexPath = 'Corpus/cmpskipindex.dat';
 	$posIndexPath = 'Corpus/posindex.dat';
 	$TFIDFPath = 'Corpus/tfidf.dat';
-	$snippetChars = 150;
+	$snippetChars = 400;
 	
 	$query = $_GET['query'];
 	execute('IR7.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
@@ -27,22 +27,36 @@
 		$replaceTo = array(' ', ' ', ' ', ' ', ' ');
 		$text = str_replace($searchFor, $replaceTo, $text);
 		
-		// Пока всё в нижний регистр.
+		// Всё в нижний регистр.
 		$text = mb_strtolower($text);
+		foreach($terms as $term)
+			$term = mb_strtolower($term);
 
 		// Здесь храним положение терминов в тексте. Для каждого термина его
 		// первое встресное положение.
+		$textLength = mb_strlen($text);
 		$pos = array();
 		$i = 0;
 		
 		foreach($terms as $term) {
 			$lastPos = 0;
-			$term = mb_strtolower($term);
-			
+			$pos[$i] = (($lastPos = mb_strpos($text, $term, $lastPos)) !== false) ? $lastPos : $textLength;
+			++$i;
+		}
+
+		// Из всех найденных терминов ищем ближайший к началу документа.
+		$pos = min($pos);
+		if($pos == $textLength)
+			$pos = 0;
+		//var_dump($pos);
+
+		// Используем mb_substr чтобы корректно ограничить строку для UTF-8.
+		$snippetLength = min($textLength - $pos, $snippetChars);
+		$text = mb_substr($text, $pos, $snippetLength, "UTF-8");
+
+		foreach($terms as $term) {
+			$lastPos = 0;
 			while(($lastPos = mb_strpos($text, $term, $lastPos)) !== false) {
-				if($pos[$i] == null)
-					$pos[$i] = $lastPos;
-				
 				$tagOpen = '<b><u>';
 				$tagClose = '</u></b>';
 				
@@ -52,23 +66,8 @@
 				$text = mb_substr_insert($text, $tagClose, $lastPos);
 				$lastPos += mb_strlen($tagClose);
 			}
-
-			// $pos должени иметь хотябы одно значение.
-			if($pos[$i] == null)
-				$pos[$i] = 0;
-			
-			++$i;
 		}
 
-		// Из всех найденных терминов ищем ближайший к началу документа.
-		$pos = min($pos);
-		
-		// Используем mb_substr чтобы корректно ограничить строку для UTF-8.
-		$textLength = mb_strlen($text);
-		$snippetLength = min($textLength - $pos, $snippetChars);
-		$text = mb_substr($text, $pos, $snippetLength, "UTF-8");
-		//var_dump($snippetLength);
-		
 		return $text;
 	}
 	
