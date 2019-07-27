@@ -4,7 +4,7 @@
 	$cmpIndexPath = 'Corpus/cmpskipindex.dat';
 	$posIndexPath = 'Corpus/posindex.dat';
 	$TFIDFPath = 'Corpus/tfidf.dat';
-	$snippetChars = 600;
+	$snippetChars = 400;
 	
 	$query = $_GET['query'];
 	execute('IR7.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
@@ -13,18 +13,33 @@
 		// TODO: всё в нижний регистр, избавиться от надоедливых символов плюс
 		// подсветить искомые слова.
 		global $snippetChars;
+
+		// Удаляем назойливые символы мешающие нормально воспринимать текст.
+		$searchFor = array("[", "]", "{", "}", "|");
+		$replaceTo = array(' ', ' ', ' ', ' ', ' ');
+		$text = str_replace($searchFor, $replaceTo, $text);
+		
+		// Пока всё в нижний регистр.
+		$text = mb_strtolower($text);
+
 		$len = strlen($text);
 		$pos = array();
 		$i = 0;
+		
 		foreach($terms as $term) {
 			$p = strpos($text, $term);
 			$pos[$i++] = ($p !== false && $p < $len) ? $p : $len;
 		}
+		
 		$pos = min($pos);
 		//if($pos == $len)
 			//$pos = 0;
 		//var_dump($pos);
-		return substr($text, $pos, min($len - $pos, $snippetChars));
+		
+		// Используем mb_substr чтобы корректно ограничить строку для UTF-8.
+		$text = mb_substr($text, $pos, min($len - $pos, $snippetChars));
+		
+		return $text;
 	}
 	
 	// Функция производит извлечение данных из корпуса документов в XML файле.
