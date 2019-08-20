@@ -9,57 +9,143 @@
 #include <set>
 #include <crc32.h>
 #include "parser.h"
+#include "range.h"
+
+unsigned int skip = 0;
+unsigned int skipCount = 0;
+
+// Класс который хранит словарь для быстрого доступа.
+class
+{
+public:
+    bool read(std::ifstream& fin)
+    {
+        if(!fin)
+            return false;
+
+        // Проверяем метку индексного файла.
+        fin.seekg(0, std::ios::beg);
+        fin.read((char*)&_fileHead, sizeof(_fileHead));
+        if(_fileHead._sign != 0xDFDFDFDF || _fileHead._tokenCount == 0)
+            return false;
+
+        unsigned int const lookupBytes = _fileHead._tokenCount * 8;
+        _lookup.resize(lookupBytes/8);
+        fin.read((char*)&_lookup[0], lookupBytes);
+
+        return true;
+    }
+
+    unsigned int find(unsigned int termID)const
+    {
+        for(std::size_t i = 0; i < _lookup.size(); ++i)
+            if(_lookup[i].first == termID)
+                return _lookup[i].second;
+        return 0;
+    }
+
+protected:
+    std::vector<std::pair<unsigned int, unsigned int>> _lookup;
+
+    // Заголовок файла на всякий случай сохраняем.
+    struct
+    {
+        unsigned int _sign;
+        unsigned int _tokenCount;
+        unsigned int _unused[2];
+    }_fileHead;
+
+}lookup;
+
+// Эта структура хранит список идентификаторов и рассотяние межде маркерами
+// прыжков. Если _stride < 2 значит маркеров прыжков нет.
+struct DocIDList
+{
+    DocIDList(): _list(0), _stride(0)
+    {}
+
+    DocIDList(std::vector<unsigned int> const& list, unsigned int const stride): _list(list), _stride(stride)
+    {}
+
+    std::vector<unsigned int> _list;
+    unsigned int _stride;
+};
+
+// Метод производит преобразование числа и возвращает количество байт которые
+// занимает число в сжатом виде.
+unsigned int decodeNumber(unsigned char const* in, unsigned int* const pCount)
+{
+    // В старших двух битах хранится количество байт которыми закодировано число.
+    unsigned int const count = (*in) >> 6;
+    unsigned int out = (*in) & 0x3f;
+
+    for(unsigned int i = 0; i < count; ++i)
+    {
+        out <<= 8;
+        out |= *(++in);
+    }
+
+    if(pCount)
+        *pCount = count + 1;
+
+    return out;
+}
 
 // Функция возвращает список документов в которых встречается термин termID.
-std::vector<unsigned int> getDocID(std::ifstream& fin, unsigned int const termID)
+DocIDList getDocID(std::ifstream& fin, unsigned int const termID)
 {
-	unsigned int fileHead[4] = {};
+    DocIDList list;
 
-	fin.seekg(0, std::ios::beg);
-	fin.read((char*)&fileHead, sizeof(fileHead));
-
-	// Проверяем метку индексного файла.
-	if(fileHead[0] != 0xABABABAB)
-		return std::vector<unsigned int>();
-
-	std::streamoff posAt = 0;
-
-	// Двигаемся по таблице индексов - ищем хэш токена.
-	// TODO: здесь потенциальное узкое место поиска.
-	while(fin.tellg() < fileHead[1])
-	{
-		// По очереди считываем элементы таблицы и ищем наш токен.
-		unsigned int tabElem[2] = {};
-		fin.read((char*)tabElem, sizeof(tabElem));
-
-		if(tabElem[0] == termID)
-		{
-			posAt = tabElem[1];
-			break;
-		}
-	}
-
+	std::streamoff posAt = lookup.find(termID);
 	if(posAt == 0)
-		return std::vector<unsigned int>();
+        return list;
 
-	unsigned int tokenHead[4] = {};
+    #pragma pack(push, 1)
+	struct
+    {
+        unsigned short _sign;
+        unsigned short _termID; // нижние 16-бит идентификатора термина
+        unsigned short _stride;
+        unsigned short _blockBytes;
+    }termHead = {};
+    #pragma pack(pop)
 
 	fin.seekg(posAt, std::ios::beg);
-	fin.read((char*)tokenHead, sizeof(tokenHead));
+	fin.read((char*)&termHead, sizeof(termHead));
 
 	// Проверяем правильность заголовка блока описывающего токен:
 	// сигнатура должна быть на месте, идентификатор токена должен быть
 	// равен запрашиваемому идентификатору и количество документов
 	// тожен не может быть равно нулю.
-	if(tokenHead[0] != 0xAAAAAAAA || tokenHead[1] != termID || tokenHead[2] == 0)
-		return std::vector<unsigned int>();
+	if(termHead._sign != 0xABAB || termHead._blockBytes == 0 || termHead._stride < 2 || termHead._termID != (termID & 0xffff))
+		return list;
 
-	// На всякий случай предохраняемся от слишком большого количества документов.
-	std::size_t const docCount = std::min(tokenHead[2], 2500U);
-	std::vector<unsigned int> docID(docCount);
+    list._stride = termHead._stride;
 
-	fin.read((char*)&docID[0], sizeof(unsigned int) * docCount);
-	return std::vector<unsigned int>(docID.begin(), docID.end());
+    // Считываем сырые данные блока.
+    std::vector<unsigned char> bytes(termHead._blockBytes);
+    fin.read((char*)&bytes[0], termHead._blockBytes);
+
+    unsigned int lastDocID = 0;
+    for(std::size_t i = 0, j = 0; i < bytes.size(); ++j)
+    {
+        unsigned int byteCount = 0;
+
+        if(j % termHead._stride == 0)
+        {
+            unsigned int skip = decodeNumber(&bytes[i], &byteCount);
+            list._list.push_back(skip);
+        }
+        else
+        {
+            lastDocID += decodeNumber(&bytes[i], &byteCount);
+            list._list.push_back(lastDocID);
+        }
+
+        i += byteCount;
+    }
+
+	return list;
 }
 
 // Функция возвращает отображение документов на список словопозиций для термина termID.
@@ -147,10 +233,82 @@ unsigned int makeTokenID(std::string token)
 	return hash;
 }
 
-std::vector<unsigned int> parseAtom(std::ifstream& fin, std::string const& token)
+std::vector<unsigned int> unite(std::vector<unsigned int> const& a, std::vector<unsigned int> const& b, unsigned int const as = 0, unsigned int const bs = 0)
 {
-	unsigned int const tokenID = makeTokenID(token);
-	return getDocID(fin, tokenID);
+    std::set<unsigned int> c;
+    for(std::size_t i = 0; i < a.size(); ++i)
+        if(i % as != 0 && as > 1)
+            c.insert(a[i]);
+    for(std::size_t i = 0; i < b.size(); ++i)
+        if(i % bs != 0 && bs > 1)
+            c.insert(b[i]);
+    return std::vector<unsigned int>(c.begin(), c.end());
+}
+
+DocIDList unite(DocIDList const& a, DocIDList const& b)
+{
+    return DocIDList(unite(a._list, b._list, a._stride, b._stride), 0);
+}
+
+// as, bs расстояние между метками для вектора a и b соответственно.
+std::vector<unsigned int> intersect(std::vector<unsigned int> const& a, std::vector<unsigned int> const& b, unsigned int const as = 0, unsigned int const bs = 0)
+{
+    std::vector<unsigned int> c;
+    std::size_t const size = std::min(a.size(), b.size());
+    for(std::size_t i = 0, j = 0; i < size && j < size; )
+    {
+        if(i % as == 0 && as > 1 && j % bs == 0 && bs > 1)
+        {
+            ++i;
+            ++j;
+        }
+        else if(i % as == 0 && as > 1)
+        {
+            i += (a[i] < b[j]) ? as : 1;
+
+            if(a[i] < b[j])
+            {
+                skip += as;
+                skipCount += 1;
+            }
+        }
+        else if(j % bs == 0 && bs > 1)
+        {
+            j += (a[i] > b[j]) ? bs : 1;
+
+            if(a[i] > b[j])
+            {
+                skip += bs;
+                skipCount += 1;
+            }
+        }
+        else if(a[i] < b[j])
+        {
+            ++i;
+        }
+        else if(a[i] > b[j])
+        {
+            ++j;
+        }
+        else if(a[i] == b[j])
+        {
+            c.push_back(a[j]);
+            ++i;
+            ++j;
+        }
+    }
+    return c;
+}
+
+DocIDList intersect(DocIDList const& a, DocIDList const& b)
+{
+    return DocIDList(intersect(a._list, b._list, a._stride, b._stride), 0);
+}
+
+DocIDList parseAtom(std::ifstream& fin, std::string const& token)
+{
+    unsigned int const tokenID = makeTokenID(token);
+    return getDocID(fin, tokenID);
 }
 
 std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& ss)
@@ -231,14 +389,14 @@ std::vector<unsigned int> parseCitation(std::ifstream& finIndex, std::ifstream& 
     return result;
 }
 
-std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPosindex, std::stringstream& expr)
+DocIDList parseSub(std::ifstream& finIndex, std::ifstream& finPosInd, std::stringstream& expr)
 {
-	std::vector<unsigned int> result;
+	DocIDList result;
 	std::string oper;
 
 	while(true)
 	{
-        std::vector<unsigned int> unit;
+        DocIDList unit;
 		std::string token;
 
         // Считываем токен из потока.
@@ -248,37 +406,97 @@ std::vector<unsigned int> parseSub(std::ifstream& finIndex, std::ifstream& finPo
 			return result;
 
 		if(token == "&&" || token == "||")
-			oper = token;
-		else if(token == "(")
-			unit = parseSub(finIndex, finPosindex, expr);
-		else if(token == ")")
-			return result;
-        else if(token == "\"")
-            unit = parseCitation(finIndex, finPosindex, expr);
-		else
-			unit = parseAtom(finIndex, token);
-
-        if(!unit.empty())
         {
-            std::vector<unsigned int> temp;
+			oper = token;
+        }
+		else if(token == "(")
+        {
+			unit = parseSub(finIndex, finPosInd, expr);
+        }
+		else if(token == ")")
+        {
+			return result;
+        }
+        else if(token == "\"")
+        {
+            unit._list = parseCitation(finIndex, finPosInd, expr);
+            unit._stride = 0;
+        }
+		else
+        {
+			unit = parseAtom(finIndex, token);
+        }
 
-		    std::sort(unit.begin(), unit.end());
-		    std::sort(result.begin(), result.end());
+        if(!unit._list.empty())
+        {
+            DocIDList temp;
 
 		    if(oper == "&&")
-			    std::set_intersection(result.begin(), result.end(), unit.begin(), unit.end(), std::back_inserter(temp));
+            {
+                temp = intersect(result, unit);
+            }
 		    else if(oper == "||")
-			    std::set_union(result.begin(), result.end(), unit.begin(), unit.end(), std::back_inserter(temp));
+            {
+                temp = unite(result, unit);
+            }
             else
+            {
                 temp = unit;
+            }
 
             result = temp;
         }
 	}
 }
 
-std::vector<unsigned int> parse(std::ifstream& finIndex, std::ifstream& finPosindex, char const* const expr)
+// Обработчик нечёткого выражения.
+DocIDList parseFuzzy(std::ifstream& finIndex, std::ifstream& finPosIndex, std::stringstream& expr)
 {
-	std::stringstream ss(expr);
-	return parseSub(finIndex, finPosindex, ss);
+    DocIDList list;
+    std::string token;
+
+    while(expr >> token && !token.empty())
+    {
+        DocIDList const temp = parseAtom(finIndex, token);
+        list = unite(list, temp);
+    }
+
+    return list;
+}
+
+std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* const expr)
+{
+    std::stringstream ss(expr);
+    std::vector<unsigned int> tokenID;
+    std::string token;
+    bool isFuzzy = true;
+
+    // В начале обработки запроса подгружаем в память словарь.
+    lookup.read(finInd);
+
+    while(ss >> token && !token.empty())
+    {
+        // Если в запросе присутствутет хотябы один из нижеперечисленных
+        // символов, то запрос считается чётким.
+        if(token == "&&" || token == "||" || token == "!" || token == "\"" || token == "\\" || token == "(" || token == ")")
+            isFuzzy = false;
+        else
+            tokenID.push_back(makeTokenID(token));
+    }
+
+    // Возвращаем указатель выражения обратно на начало.
+    ss.clear();
+    ss.seekg(0, std::ios::beg);
+
+    // В зависимости от того был ли запрос чётким обрабатываем его.
+    DocIDList list = (tokenID.size() > 1 && isFuzzy == true) ? parseFuzzy(finInd, finPosInd, ss) : parseSub(finInd, finPosInd, ss);
+
+    std::vector<unsigned int> docID;
+    docID.reserve(list._list.size());
+    for(std::size_t i = 0; i < list._list.size(); ++i)
+        if(list._stride < 2 || (i % list._stride != 0 && list._stride >= 2))
+            docID.push_back(list._list[i]);
+
+    range(docID, tokenID, finTFIDF);
+    return docID;
 }

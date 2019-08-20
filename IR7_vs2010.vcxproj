@@ -10,11 +10,21 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Common\crc32\crc32.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="parser.cpp" />
+    <ClCompile Include="range.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="parser.h" />
+    <ClInclude Include="range.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{EF21C233-2F28-432B-B2AD-B8253EFBB780}</ProjectGuid>
+    <ProjectGuid>{29C56266-8367-401B-A1AF-B3BBB78C533F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>IR5</RootNamespace>
-    <ProjectName>IR5</ProjectName>
+    <RootNamespace>IR7</RootNamespace>
+    <ProjectName>IR7</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -40,11 +50,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>IR5</TargetName>
+    <TargetName>IR7</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>IR5</TargetName>
+    <TargetName>IR7</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -53,13 +63,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Common\icu\;$(SolutionDir)\Common\crc32\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)../Common;$(ProjectDir)../Common/crc32;$(ProjectDir)../Common/icu;$(ProjectDir)../Common/tinyxml2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Common\icu\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>icu-cu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)../Common/icu;$(ProjectDir)../Common/tinyxml2;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>icu-cu.lib;tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,26 +81,17 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Common\icu\;$(SolutionDir)\Common\crc32\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/../Common/crc32;$(ProjectDir)/../Common/icu;$(ProjectDir)/../Common/tinyxml2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Common\icu\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>icu-cu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)/../Common/icu;$(ProjectDir)/../Common/tinyxml2;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>icu-cu.lib;tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\Common\crc32\crc32.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="parser.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Common\crc32\crc32.h" />
-    <ClInclude Include="parser.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

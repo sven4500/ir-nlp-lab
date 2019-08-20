@@ -19,9 +19,9 @@ int main(int argc, char** argv)
 {
 	std::setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 3)
+	if(argc != 4)
 	{
-		std::cout << "IR5.exe _In_index.dat _In_posindex.dat" << std::endl;
+		std::cout << "IR7.exe _In_CmpSkipIndex.dat _In_PosIndex.dat _In_TFIDF.dat" << std::endl;
 		return 1;
 	}
 
@@ -34,13 +34,14 @@ int main(int argc, char** argv)
     MessageBox(NULL, NULL, NULL, MB_OK);
     #endif
 
-	std::ifstream finIndex, finPosindex;
-	finIndex.open(argv[1], std::ios::in | std::ios::binary);
-    finPosindex.open(argv[2], std::ios::in | std::ios::binary);
+	std::ifstream finInd, finPosInd, finTFIDF;
+	finInd.open(argv[1], std::ios::in | std::ios::binary);
+    finPosInd.open(argv[2], std::ios::in | std::ios::binary);
+    finTFIDF.open(argv[3], std::ios::in | std::ios::binary);
 
-	if(!finIndex || !finPosindex)
+	if(!finInd || !finPosInd || !finTFIDF)
 	{
-		std::cout << "Не могу открыть файл индекса" << std::endl;
+		std::cout << "Не могу открыть один или несколько файлов." << std::endl;
 		return -1;
 	}
 
@@ -49,17 +50,21 @@ int main(int argc, char** argv)
 	std::getline(std::cin, query);
 
 	std::clock_t const clockBegin = clock();
-	std::vector<unsigned int> const docID = parse(finIndex, finPosindex, query.c_str());
+	std::vector<unsigned int> const docID = parse(finInd, finPosInd, finTFIDF, query.c_str());
 	std::clock_t const clockEnd = clock();
 
 	for(std::size_t i = 0; i < docID.size(); ++i)
 		std::cout << docID[i] << ' ';
 	std::cout << std::endl;
 
+    std::cout << (double)skip / (double)skipCount << std::endl;
+
 	unsigned int const msTimeElapsed = (unsigned int)(((double)(clockEnd - clockBegin) / CLOCKS_PER_SEC) * 1000.0);
 	std::cout << msTimeElapsed << std::endl;
 
-    finIndex.close();
-    finPosindex.close();
+    finInd.close();
+    finPosInd.close();
+    finTFIDF.close();
+
 	return 0;
 }
