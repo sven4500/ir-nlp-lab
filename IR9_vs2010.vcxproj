@@ -21,10 +21,10 @@
     <ClInclude Include="range.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{29C56266-8367-401B-A1AF-B3BBB78C533F}</ProjectGuid>
+    <ProjectGuid>{A40E64EB-3C2F-4CF8-BC42-2B2B6CD89204}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>IR7</RootNamespace>
-    <ProjectName>IR7</ProjectName>
+    <RootNamespace>IR9</RootNamespace>
+    <ProjectName>IR9</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -50,11 +50,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>IR7</TargetName>
+    <TargetName>IR9</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>IR7</TargetName>
+    <TargetName>IR9</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
