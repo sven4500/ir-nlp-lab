@@ -13,6 +13,7 @@
 #include "normIndexMaker.h"
 #include "compressedIndexMaker.h"
 #include "cmpSkipIndexMaker.h"
+#include "zoneIndexMaker.h"
 using namespace tinyxml2;
 
 void make(XMLDocument* doc, IndexMaker* maker)
@@ -47,9 +48,9 @@ int main(int argc, char** argv)
 {
 	setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 9)
+	if(argc != 10)
 	{
-		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat _Out_cmpindex.dat _Out_cmpskipindex.dat" << std::endl;
+		std::cout << "IR3.exe _In_corpus.xml _In_tokens.xml _Out_index.dat _Out_posindex.dat _Out_tfidf.dat _Out_normindex.dat _Out_cmpindex.dat _Out_cmpskipindex.dat _Out_zoneindex.dat" << std::endl;
 		return 1;
 	}
 
@@ -123,6 +124,14 @@ int main(int argc, char** argv)
         CmpSkipIndexMaker maker;
         make(&tokensDoc, &maker);
         maker.write(argv[8]);
+    }
+
+    if(argv[9][0] != '0')
+    {
+        std::cout << "Создаю зонный индекс..." << std::endl;
+        ZoneIndexMaker maker;
+        make(&corpusDoc, &maker);
+        maker.write(argv[9]);
     }
 
     return 0;
