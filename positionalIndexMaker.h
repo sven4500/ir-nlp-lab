@@ -4,6 +4,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 #include "indexMaker.h"
 
 class PositionalIndexMaker: public IndexMaker
@@ -19,6 +20,8 @@ public:
 
     unsigned int tokenCount()const;
     unsigned int uniqueTokenCount()const;
+
+    static unsigned int getTokenID(std::string const& text, std::size_t beg, std::size_t& end);
 
 protected:
     // Отображение контрольной суммы токена, на вектор словопозиций.

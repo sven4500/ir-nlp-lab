@@ -2,9 +2,9 @@
 #ifndef ZONEINDEXMAKER_H
 #define ZONEINDEXMAKER_H
 
-#include "indexMaker.h"
+#include "positionalIndexMaker.h"
 
-class ZoneIndexMaker: public IndexMaker
+class ZoneIndexMaker: public PositionalIndexMaker
 {
 public:
     ZoneIndexMaker();

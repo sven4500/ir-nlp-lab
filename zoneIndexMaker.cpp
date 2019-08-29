@@ -12,10 +12,13 @@ void ZoneIndexMaker::clear()
 
 bool ZoneIndexMaker::update(XMLElement const* const elem)
 {
+    PositionalIndexMaker::update(elem);
+    // TODO: добавить токены из заголовка документа.
     return false;
 }
 
 bool ZoneIndexMaker::write(std::string const& filename)
 {
-    return false;
+    // TODO: трансформировать координаты в зоны.
+    return PositionalIndexMaker::write(filename);
 }
