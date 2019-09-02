@@ -7,6 +7,10 @@
 class ZoneIndexMaker: public PositionalIndexMaker
 {
 public:
+    // Количество зон на которые разбивается текст каждого документа. По
+    // словопозиции определяется принадлежность токена к той или иной зоне.
+    static unsigned int const _numberOfZones = 2;
+
     ZoneIndexMaker();
     virtual ~ZoneIndexMaker();
 

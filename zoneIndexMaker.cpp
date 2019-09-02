@@ -1,3 +1,5 @@
+#include <cassert> // assert
+#include <iostream> // cout
 #include "ZoneIndexMaker.h"
 using namespace tinyxml2;
 
@@ -31,29 +33,64 @@ bool ZoneIndexMaker::update(XMLElement const* const elem)
 
     while((hash = getTokenID(text, beg, end)) != 0)
     {
-        // -1 в младшем получлове означает что эта зона заголовка документа.
+        // -1 в младшем получлове означает что эта зона заголовка документа. -1
+        // имеет одиночный суффикс "l" потому что нам нужны младшие 32 бита.
         _tokenToPos[hash].push_back(((unsigned long long)docID << 32) | (-1l));
-        ++_tokenCount;
+        ++_totalTokenCount;
         beg = end;
     }
-
 
     return false;
 }
 
 bool ZoneIndexMaker::write(std::string const& filename)
 {
+    std::cout << "Разбиваю документ на зоны..." << std::endl;
+
     // Трансформируем координаты в зоны.
     for(std::map<unsigned int, std::vector<unsigned long long>>::iterator iter = _tokenToPos.begin(), end = _tokenToPos.end(); iter != end; ++iter)
     {
-        int posMin = std::numeric_limits<int>::max(), posMax = std::numeric_limits<int>::min();
-
         std::vector<unsigned long long>& vect = iter->second;
-        /*for(std::size_t i = 0; i < vect.size(); ++i)
+        std::vector<unsigned long long> zones;
+
+        assert(!vect.empty());
+
+        for(std::size_t i = 0; i < vect.size(); ++i)
         {
-            if(vect[i] & 0xFFFFFFFF)
-            {}
-        }*/
+            unsigned long long index = vect[i];
+
+            unsigned int const docID = index >> 32;
+            int const pos = index & -1l;
+
+            // Идентификатор документа всегда ненулевой. Словопозиция не должна
+            // превышать количество слов в документе.
+            assert(docID != 0);
+            //assert(pos <= _docIDToTokenCount[docID]);
+
+            unsigned int currentZone = 0;
+
+            // Этот список можно дополнять если вдруг станет необходимым
+            // добавить ещё какой-нибудь тип зон.
+            if(pos == -1)
+                currentZone = 1;
+            else if(pos >= 0)
+                currentZone = pos / (_docIDToTokenCount[docID] / _numberOfZones) + 2;
+
+            // В текущей версии индекс зоны не может быть равен нулю.
+            assert(currentZone > 0);
+
+            index = ((unsigned long long)docID << 32) | currentZone;
+
+            // Список сортированный. Достаточно проверить последний индекс.
+            if(zones.empty() || zones.back() != index)
+                zones.push_back(index);
+        }
+
+        assert(!zones.empty());
+        assert(zones.size() <= vect.size());
+
+        // Меняем информация о словопозициях на информацию о зонах.
+        iter->second = zones;
     }
 
     return PositionalIndexMaker::write(filename);

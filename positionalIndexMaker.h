@@ -29,8 +29,12 @@ protected:
     // пам€ти и быстродействи€.
     std::map<unsigned int, std::vector<unsigned long long>> _tokenToPos;
 
-    //  оличество терминов.
-    unsigned int _tokenCount;
+    // ќтображение хранит количество токенов в документе по его идентификатору.
+    std::map<unsigned int, unsigned int> _docIDToTokenCount;
+
+    //  оличество терминов: общее количество токенов на корпус документов
+    // (включа€ повтор€ющиес€ токены) и количество уникальных токнов.
+    unsigned int _totalTokenCount;
     unsigned int _uniqueTokenCount;
 
 };

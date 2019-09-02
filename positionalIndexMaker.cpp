@@ -7,7 +7,7 @@
 #include "positionalIndexMaker.h"
 using namespace tinyxml2;
 
-PositionalIndexMaker::PositionalIndexMaker(): _tokenCount(0), _uniqueTokenCount(0)
+PositionalIndexMaker::PositionalIndexMaker(): _totalTokenCount(0), _uniqueTokenCount(0)
 {}
 
 PositionalIndexMaker::~PositionalIndexMaker()
@@ -20,7 +20,7 @@ void PositionalIndexMaker::clear()
 
 unsigned int PositionalIndexMaker::tokenCount()const
 {
-    return _tokenCount;
+    return _totalTokenCount;
 }
 
 unsigned int PositionalIndexMaker::uniqueTokenCount()const
@@ -62,6 +62,7 @@ bool PositionalIndexMaker::update(XMLElement const* const elem)
 
     std::string const text = elem->GetText();
 
+    unsigned int tokenCount = 0;
     unsigned int hash = 0;
     std::size_t pos = 0;
     std::size_t beg = 0;
@@ -69,13 +70,17 @@ bool PositionalIndexMaker::update(XMLElement const* const elem)
 
     while((hash = getTokenID(text, beg, end)) != 0)
     {
+        assert(hash != 0);
         _tokenToPos[hash].push_back(((unsigned long long)docID << 32) | pos);
 
-        ++_tokenCount;
+        ++_totalTokenCount;
+        ++tokenCount;
         ++pos;
 
         beg = end;
     }
+
+    _docIDToTokenCount[docID] = tokenCount;
 
     _uniqueTokenCount = _tokenToPos.size();
     return true;
