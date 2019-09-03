@@ -24,7 +24,7 @@
     <ClCompile Include="..\Common\crc32\crc32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="range.cpp">
+    <ClCompile Include="TFIDFRange.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,7 +32,7 @@
     <ClInclude Include="parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="range.h">
+    <ClInclude Include="TFIDFRange.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

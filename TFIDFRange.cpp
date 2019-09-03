@@ -1,6 +1,6 @@
 #include <cmath> // log
 #include <algorithm> // sort
-#include "range.h"
+#include "TFIDFRange.h"
 
 #pragma pack(push, 1)
 
@@ -113,17 +113,17 @@ TFIDFMetric getTFIDF(std::ifstream& fin, unsigned int tokenID)
 }
 
 // Предикат для сортировки вектора пар <документ, ранг>.
-bool pred(std::pair<unsigned int, double> const& p1, std::pair<unsigned int, double> const& p2)
+/*bool pred(std::pair<unsigned int, double> const& p1, std::pair<unsigned int, double> const& p2)
 {
     // Возвращает true если элемент p1 должен находится в списке до p2.
     return p1.second > p2.second;
-}
+}*/
 
 // Функция ранжирования TF-IDF.
-void range(std::vector<unsigned int>& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin)
+std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int>& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin)
 {
     if(docID.empty() || tokenID.empty())
-        return;
+        return std::vector<std::pair<unsigned int, double>>();
 
     std::vector<std::vector<TFIDFPairMetric>> metrics(docID.size(), std::vector<TFIDFPairMetric>(tokenID.size()));
 
@@ -142,27 +142,27 @@ void range(std::vector<unsigned int>& docID, std::vector<unsigned int> const& to
                 metrics[i][j] = temp[j].toPairMetric(docID[i]);
     }
 
+    // Вектор пар <документ, ранг>. После того как он будет заполнен
+    // каждому документу будет соответствовать определённый ранг.
+    // Отсортировав этот список полцчим ранжированный список документов.
+    std::vector<std::pair<unsigned int, double>> rangePair(docID.size(), std::pair<unsigned int, double>(0, 0.0));
+
+    for(std::size_t i = 0; i < docID.size(); ++i)
     {
-        // Вектор пар <документ, ранг>. После того как он будет заполнен
-        // каждому документу будет соответствовать определённый ранг.
-        // Отсортировав этот список полцчим ранжированный список документов.
-        std::vector<std::pair<unsigned int, double>> rangePair(docID.size(), std::pair<unsigned int, double>(0, 0.0));
+        rangePair[i].first = docID[i];
 
-        for(std::size_t i = 0; i < docID.size(); ++i)
+        for(std::size_t j = 0; j < tokenID.size(); ++j)
         {
-            rangePair[i].first = docID[i];
-
-            for(std::size_t j = 0; j < tokenID.size(); ++j)
-            {
-                double const TF = (metrics[i][j]._tokenTotalCount > 0) ? (double)metrics[i][j]._tokenCount / metrics[i][j]._tokenTotalCount : 0.0;
-                double const IDF = (metrics[i][j]._docTotalCount > 0 && metrics[i][j]._docCount > 0) ? log((double)metrics[i][j]._docTotalCount / metrics[i][j]._docCount) : 0.0;
-                rangePair[i].second += TF * IDF;
-            }
+            double const TF = (metrics[i][j]._tokenTotalCount > 0) ? (double)metrics[i][j]._tokenCount / metrics[i][j]._tokenTotalCount : 0.0;
+            double const IDF = (metrics[i][j]._docTotalCount > 0 && metrics[i][j]._docCount > 0) ? log((double)metrics[i][j]._docTotalCount / metrics[i][j]._docCount) : 0.0;
+            rangePair[i].second += TF * IDF;
         }
-
-        std::sort(rangePair.begin(), rangePair.end(), pred);
-
-        for(std::size_t i = 0; i < docID.size(); ++i)
-            docID[i] = rangePair[i].first;
     }
+
+    /*std::sort(rangePair.begin(), rangePair.end(), pred);
+
+    for(std::size_t i = 0; i < docID.size(); ++i)
+        docID[i] = rangePair[i].first;*/
+
+    return rangePair;
 }

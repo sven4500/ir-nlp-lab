@@ -9,7 +9,7 @@
 #include <set>
 #include <crc32.h>
 #include "parser.h"
-#include "range.h"
+#include "TFIDFRange.h"
 
 unsigned int skip = 0;
 unsigned int skipCount = 0;
@@ -497,6 +497,10 @@ std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd,
         if(list._stride < 2 || (i % list._stride != 0 && list._stride >= 2))
             docID.push_back(list._list[i]);
 
-    range(docID, tokenID, finTFIDF);
+    // Производим ранжирование списка документов.
+    {
+        std::vector<std::pair<unsigned int, double>> range1 = TFIDFRange(docID, tokenID, finTFIDF);
+    }
+
     return docID;
 }
