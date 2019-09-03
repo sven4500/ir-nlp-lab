@@ -1,13 +1,14 @@
 ﻿<?php
 	// Некоторые глобальные пути к файлам.
 	$corpusPath = 'Corpus/corpus.xml';
-	$cmpIndexPath = 'Corpus/cmpskipindex.dat';
-	$posIndexPath = 'Corpus/posindex.dat';
-	$TFIDFPath = 'Corpus/tfidf.dat';
+	//$cmpIndexPath = 'Corpus/cmpskipindex.dat';
+	//$posIndexPath = 'Corpus/posindex.dat';
+	//$TFIDFPath = 'Corpus/tfidf.dat';
+	//$zoneIndexPath = 'Corpus/zoneindex.dat';
 	$snippetChars = 400;
 	
 	$query = $_GET['query'];
-	execute('IR7.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat"', $query);
+	execute('IR9.exe "Corpus/cmpskipindex.dat" "Corpus/posindex.dat" "Corpus/tfidf.dat" "Corpus/zoneindex.dat"', $query);
 	
 	// Версия substr_replace для многобайтовой кодировки (mb_*).
 	function mb_substr_insert($string, $what, $where) {

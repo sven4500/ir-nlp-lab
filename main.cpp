@@ -19,9 +19,9 @@ int main(int argc, char** argv)
 {
 	std::setlocale(LC_CTYPE, "Russian");
 
-	if(argc != 4)
+	if(argc != 5)
 	{
-		std::cout << "IR9.exe _In_CmpSkipIndex.dat _In_PosIndex.dat _In_TFIDF.dat" << std::endl;
+		std::cout << "IR9.exe _In_CmpSkipIndex.dat _In_PosIndex.dat _In_TFIDF.dat _In_ZoneIndex.dat" << std::endl;
 		return 1;
 	}
 
