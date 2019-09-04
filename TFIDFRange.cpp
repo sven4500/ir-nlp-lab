@@ -120,7 +120,7 @@ TFIDFMetric getTFIDF(std::ifstream& fin, unsigned int tokenID)
 }*/
 
 // Функция ранжирования TF-IDF.
-std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int>& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin)
+std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int> const& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin)
 {
     if(docID.empty() || tokenID.empty())
         return std::vector<std::pair<unsigned int, double>>();

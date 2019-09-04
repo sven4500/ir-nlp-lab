@@ -27,12 +27,24 @@
     <ClCompile Include="TFIDFRange.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="zoneRange.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="posIndexReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TFIDFRange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zoneRange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="posIndexReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,11 +14,15 @@
     <ClCompile Include="..\Common\crc32\crc32.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="posIndexReader.cpp" />
     <ClCompile Include="TFIDFRange.cpp" />
+    <ClCompile Include="zoneRange.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parser.h" />
+    <ClInclude Include="posIndexReader.h" />
     <ClInclude Include="TFIDFRange.h" />
+    <ClInclude Include="zoneRange.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A40E64EB-3C2F-4CF8-BC42-2B2B6CD89204}</ProjectGuid>

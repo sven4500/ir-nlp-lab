@@ -10,6 +10,6 @@
 // составлени€ запроса. ‘ункци€ возвращает вектор той же длины что и вектор
 // docID. Ёлементами вектора €вл€ютс€ пары значений <идентификатор документа;
 // ранг TF-IDF>.
-std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int>& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin);
+std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int> const& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin);
 
 #endif
