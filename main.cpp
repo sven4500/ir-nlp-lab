@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     // Замеряем сколько времени потратили на разбор запроса. Разбор запроса
     // включает одновременно ранжирование.
 	std::clock_t const clockBegin = clock();
-	std::vector<unsigned int> const docID = parse(finInd, finPosInd, finTFIDF, query.c_str());
+	std::vector<unsigned int> const docID = parse(query.c_str(), finInd, finPosInd, finTFIDF, finZoneInd);
 	std::clock_t const clockEnd = clock();
 
     // В стандартный поток вывода сообщаем идентификаторы документов

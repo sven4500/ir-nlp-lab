@@ -1,5 +1,4 @@
 #include <cmath> // log
-#include <algorithm> // sort
 #include "TFIDFRange.h"
 
 #pragma pack(push, 1)
@@ -112,13 +111,6 @@ TFIDFMetric getTFIDF(std::ifstream& fin, unsigned int tokenID)
     return metric;
 }
 
-// Предикат для сортировки вектора пар <документ, ранг>.
-/*bool pred(std::pair<unsigned int, double> const& p1, std::pair<unsigned int, double> const& p2)
-{
-    // Возвращает true если элемент p1 должен находится в списке до p2.
-    return p1.second > p2.second;
-}*/
-
 // Функция ранжирования TF-IDF.
 std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int> const& docID, std::vector<unsigned int> const& tokenID, std::ifstream& fin)
 {
@@ -158,11 +150,6 @@ std::vector<std::pair<unsigned int, double>> TFIDFRange(std::vector<unsigned int
             rangePair[i].second += TF * IDF;
         }
     }
-
-    /*std::sort(rangePair.begin(), rangePair.end(), pred);
-
-    for(std::size_t i = 0; i < docID.size(); ++i)
-        docID[i] = rangePair[i].first;*/
 
     return rangePair;
 }

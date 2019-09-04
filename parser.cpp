@@ -2,7 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
+#include <algorithm> // sort
 #include <sstream>
 #include <string>
 #include <map>
@@ -10,6 +10,7 @@
 #include <crc32.h>
 #include "parser.h"
 #include "TFIDFRange.h"
+#include "zoneRange.h"
 #include "posIndexReader.h"
 
 unsigned int skip = 0;
@@ -390,7 +391,14 @@ DocIDList parseFuzzy(std::ifstream& finIndex, std::ifstream& finPosIndex, std::s
     return list;
 }
 
-std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* const expr)
+// Предикат для сортировки вектора пар <документ, ранг>. Возвращает true если
+// элемент p1 должен находится в списке до p2.
+bool pred(std::pair<unsigned int, double> const& p1, std::pair<unsigned int, double> const& p2)
+{
+    return p1.second > p2.second;
+}
+
+std::vector<unsigned int> parse(char const* const expr, std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, std::ifstream& finZoneInd)
 {
     std::stringstream ss(expr);
     std::vector<unsigned int> tokenID;
@@ -426,6 +434,11 @@ std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd,
     // Производим ранжирование списка документов.
     {
         std::vector<std::pair<unsigned int, double>> range1 = TFIDFRange(docID, tokenID, finTFIDF);
+        std::vector<std::pair<unsigned int, double>> range2 = zoneRange(docID, tokenID, finZoneInd);
+
+        std::sort(range1.begin(), range1.end(), pred);
+        for(std::size_t i = 0; i < docID.size(); ++i)
+            docID[i] = range1[i].first;
     }
 
     return docID;

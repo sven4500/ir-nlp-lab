@@ -8,6 +8,6 @@
 extern unsigned int skip;
 extern unsigned int skipCount;
 
-std::vector<unsigned int> parse(std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, char const* expr);
+std::vector<unsigned int> parse(char const* expr, std::ifstream& finInd, std::ifstream& finPosInd, std::ifstream& finTFIDF, std::ifstream& finZoneInd);
 
 #endif
