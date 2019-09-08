@@ -433,12 +433,20 @@ std::vector<unsigned int> parse(char const* const expr, std::ifstream& finInd, s
 
     // Производим ранжирование списка документов.
     {
-        std::vector<std::pair<unsigned int, double>> range1 = TFIDFRange(docID, tokenID, finTFIDF);
-        std::vector<std::pair<unsigned int, double>> range2 = zoneRange(docID, tokenID, finZoneInd);
+        std::vector<std::pair<unsigned int, double>> range0;
+        std::vector<std::pair<unsigned int, double>> const range1 = TFIDFRange(docID, tokenID, finTFIDF);
+        std::vector<std::pair<unsigned int, double>> const range2 = zoneRange(docID, tokenID, finZoneInd);
 
-        std::sort(range1.begin(), range1.end(), pred);
+        range0.resize(docID.size());
         for(std::size_t i = 0; i < docID.size(); ++i)
-            docID[i] = range1[i].first;
+        {
+            range0[i].first = docID[i];
+            range0[i].second = (range1[i].second + range2[i].second) / 2.0;
+        }
+
+        std::sort(range0.begin(), range0.end(), pred);
+        for(std::size_t i = 0; i < docID.size(); ++i)
+            docID[i] = range0[i].first;
     }
 
     return docID;
