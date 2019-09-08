@@ -33,9 +33,11 @@ bool ZoneIndexMaker::update(XMLElement const* const elem)
 
     while((hash = getTokenID(text, beg, end)) != 0)
     {
-        // -1 в младшем получлове означает что эта зона заголовка документа. -1
-        // имеет одиночный суффикс "l" потому что нам нужны младшие 32 бита.
-        _tokenToPos[hash].push_back(((unsigned long long)docID << 32) | (-1l));
+        // -1 в младшем полуслове означает что эта зона заголовка документа. -1
+        // имеет суффикс "ul" потому что нам нужны младшие 32 бита. Далее это
+        // значение рассматривается как зона заголовока документа.
+        std::vector<unsigned long long>& vect = _tokenToPos[hash];
+        vect.push_back(((unsigned long long)docID << 32) | -1ul);
         ++_totalTokenCount;
         beg = end;
     }
@@ -62,19 +64,25 @@ bool ZoneIndexMaker::write(std::string const& filename)
             unsigned int const docID = index >> 32;
             int const pos = index & -1l;
 
-            // Идентификатор документа всегда ненулевой. Словопозиция не должна
-            // превышать количество слов в документе.
+            // Идентификатор документа всегда ненулевой.
             assert(docID != 0);
-            //assert(pos <= _docIDToTokenCount[docID]);
 
             unsigned int currentZone = 0;
 
             // Этот список можно дополнять если вдруг станет необходимым
             // добавить ещё какой-нибудь тип зон.
             if(pos == -1)
+            {
                 currentZone = 1;
+            }
             else if(pos >= 0)
+            {
+                // Словопозиция не может быть больше количества слов в
+                // документе. +2 добавление к зоне потому что 0 зарезервирован,
+                // а 1 занят заголовком.
+                assert((unsigned int)pos <= _docIDToTokenCount[docID]);
                 currentZone = pos / (_docIDToTokenCount[docID] / _numberOfZones) + 2;
+            }
 
             // В текущей версии индекс зоны не может быть равен нулю.
             assert(currentZone > 0);
