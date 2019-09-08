@@ -15,6 +15,12 @@
 #include <Windows.h>
 #endif
 
+inline void closeFiles(std::ifstream* fin, unsigned int count)
+{
+    while(count--)
+        (fin++)->close();
+}
+
 int main(int argc, char** argv)
 {
 	std::setlocale(LC_CTYPE, "Russian");
@@ -33,16 +39,18 @@ int main(int argc, char** argv)
     MessageBox(NULL, NULL, NULL, MB_OK);
     #endif
 
-	std::ifstream finInd(argv[1], std::ios::in | std::ios::binary),
-        finPosInd(argv[2], std::ios::in | std::ios::binary),
-        finTFIDF(argv[3], std::ios::in | std::ios::binary),
-        finZoneInd(argv[4], std::ios::in | std::ios::binary);
-
-	if(!finInd || !finPosInd || !finTFIDF || !finZoneInd)
-	{
-		std::cout << "Не могу открыть один или несколько файлов." << std::endl;
-		return -1;
-	}
+    unsigned int const numFiles = 4;
+    std::ifstream fin[numFiles];
+    for(unsigned int i = 0; i < numFiles; ++i)
+    {
+        fin[i].open(argv[i+1], std::ios::in | std::ios::binary);
+        if(!fin[i])
+        {
+            std::cout << "Не могу открыть один или несколько файлов." << std::endl;
+            closeFiles(fin, numFiles);
+            return -1;
+        }
+    }
 
     // Из стандартного потока ввода получаем строку содержащую запрос.
 	std::string query;
@@ -51,7 +59,7 @@ int main(int argc, char** argv)
     // Замеряем сколько времени потратили на разбор запроса. Разбор запроса
     // включает одновременно ранжирование.
 	std::clock_t const clockBegin = clock();
-	std::vector<unsigned int> const docID = parse(query.c_str(), finInd, finPosInd, finTFIDF, finZoneInd);
+	std::vector<unsigned int> const docID = parse(query.c_str(), fin[0], fin[1], fin[2], fin[3]);
 	std::clock_t const clockEnd = clock();
 
     // В стандартный поток вывода сообщаем идентификаторы документов
@@ -69,10 +77,8 @@ int main(int argc, char** argv)
 	std::cout << msTimeElapsed << std::endl;
 
     // Закрываем все открытые файлы индексов.
-    finInd.close();
-    finPosInd.close();
-    finTFIDF.close();
-    finZoneInd.close();
+    //_runaway:
+    closeFiles(fin, numFiles);
 
 	return 0;
 }
