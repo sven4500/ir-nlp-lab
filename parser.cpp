@@ -164,10 +164,10 @@ std::vector<unsigned int> unite(std::vector<unsigned int> const& a, std::vector<
 {
     std::set<unsigned int> c;
     for(std::size_t i = 0; i < a.size(); ++i)
-        if(i % as != 0 && as > 1)
+        if((as == 0) || (i % as != 0))
             c.insert(a[i]);
     for(std::size_t i = 0; i < b.size(); ++i)
-        if(i % bs != 0 && bs > 1)
+        if((bs == 0) || (i % bs != 0))
             c.insert(b[i]);
     return std::vector<unsigned int>(c.begin(), c.end());
 }
@@ -428,7 +428,7 @@ std::vector<unsigned int> parse(char const* const expr, std::ifstream& finInd, s
     std::vector<unsigned int> docID;
     docID.reserve(list._list.size());
     for(std::size_t i = 0; i < list._list.size(); ++i)
-        if(list._stride < 2 || (i % list._stride != 0 && list._stride >= 2))
+        if((list._stride < 2) || (i % list._stride != 0))
             docID.push_back(list._list[i]);
 
     // Производим ранжирование списка документов.
