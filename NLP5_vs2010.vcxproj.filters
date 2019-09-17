@@ -21,12 +21,18 @@
     <ClCompile Include="monogramcollector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="textbeautifier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="icorpusprocessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="monogramcollector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="textbeautifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -16,10 +16,14 @@ public:
     virtual void clear();
     virtual bool dump(char const* filename);
 
+    template<typename ty1, typename ty2>
+    static bool comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
+
+    unsigned int tokenCount()const;
+
 protected:
     // ќтображение дл€ хранени€ пары <токен, количество>.
     std::map<std::string, unsigned int> _tokens;
-    unsigned int _numTokens;
 
 };
 

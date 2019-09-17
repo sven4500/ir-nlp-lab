@@ -45,6 +45,8 @@ int main(int argc, char** argv)
 
     MonogramCollector monogramCollector;
     processCorpus(&doc, &monogramCollector);
+    //monogramCollector.remove(30);
+    monogramCollector.dump("monograms.txt");
 
     return 0;
 }
