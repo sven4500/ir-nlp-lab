@@ -23,7 +23,7 @@ unsigned int MonogramCollector::tokenCount()const
 template<typename ty1, typename ty2>
 bool MonogramCollector::comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b)
 {
-    return (a.second != b.second) ? a.second > b.second : false; //a.first < b.first;
+    return (a.second != b.second) ? a.second > b.second : false;
 }
 
 void MonogramCollector::update(XMLElement const* elem)
@@ -45,18 +45,34 @@ void MonogramCollector::update(XMLElement const* elem)
     }
 }
 
-bool MonogramCollector::dump(char const* filename)
+std::vector<std::pair<std::string, unsigned int>> MonogramCollector::mostFrequent(unsigned int count)const
 {
     std::vector<std::pair<std::string, unsigned int>> vect;
+
+    count = std::min(_tokens.size(), count);
+    if(count == 0)
+        return vect;
+
     vect.resize(_tokens.size());
+
     unsigned int i = 0;
     for(auto iter = _tokens.begin(), end = _tokens.end(); iter != end; ++iter)
         vect[i++] = *iter;
+
     std::sort(vect.begin(), vect.end(), comparer<std::string, unsigned int>);
+    vect.resize(count);
+    return vect;
+}
+
+bool MonogramCollector::dump(char const* filename)
+{
     std::ofstream fout;
     fout.open(filename, std::ios::out | std::ios::trunc);
-    for(std::size_t i = 0; i < 100; ++i)
+    if(!fout)
+        return false;
+    std::vector<std::pair<std::string, unsigned int>> const vect = mostFrequent(100);
+    for(std::size_t i = 0; i < vect.size(); ++i)
         fout << vect[i].second << ": " << vect[i].first << "\n";
     fout.close();
-    return false;
+    return true;
 }
