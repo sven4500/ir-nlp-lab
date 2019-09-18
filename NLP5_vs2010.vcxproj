@@ -81,11 +81,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bigramcollector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="monogramcollector.cpp" />
     <ClCompile Include="textbeautifier.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bigramcollector.h" />
     <ClInclude Include="icorpusprocessor.h" />
     <ClInclude Include="monogramcollector.h" />
     <ClInclude Include="textbeautifier.h" />

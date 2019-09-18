@@ -16,7 +16,7 @@ void MonogramCollector::clear()
 
 unsigned int MonogramCollector::tokenCount()const
 {
-    return _tokens.size();
+    return _collection.size();
 }
 
 // https://stackoverflow.com/questions/19842035/how-can-i-sort-a-stdmap-first-by-value-then-by-key
@@ -40,7 +40,7 @@ void MonogramCollector::update(XMLElement const* elem)
         if(!token.empty() && !is_alpha_numeric(token[0]))
         {
             to_lower_case(token);
-            _tokens[token]++;
+            _collection[token]++;
         }
     }
 }
@@ -49,14 +49,14 @@ std::vector<std::pair<std::string, unsigned int>> MonogramCollector::mostFrequen
 {
     std::vector<std::pair<std::string, unsigned int>> vect;
 
-    count = std::min(_tokens.size(), count);
+    count = std::min(_collection.size(), count);
     if(count == 0)
         return vect;
 
-    vect.resize(_tokens.size());
+    vect.resize(_collection.size());
 
     unsigned int i = 0;
-    for(auto iter = _tokens.begin(), end = _tokens.end(); iter != end; ++iter)
+    for(auto iter = _collection.begin(), end = _collection.end(); iter != end; ++iter)
         vect[i++] = *iter;
 
     std::sort(vect.begin(), vect.end(), comparer<std::string, unsigned int>);

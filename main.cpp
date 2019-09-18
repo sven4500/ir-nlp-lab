@@ -3,6 +3,7 @@
 #include <tinyxml2.h>
 #include "icorpusprocessor.h"
 #include "monogramcollector.h"
+#include "bigramcollector.h"
 using namespace tinyxml2;
 
 void processCorpus(XMLDocument* doc, ICorpusProcessor* proc)
@@ -43,10 +44,14 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    MonogramCollector monogramCollector;
-    processCorpus(&doc, &monogramCollector);
-    //monogramCollector.remove(30);
-    monogramCollector.dump("monograms.txt");
+    MonogramCollector monograms;
+    processCorpus(&doc, &monograms);
+    monograms.dump("monograms.txt");
+
+    BigramCollector bigrams;
+    bigrams.tellMostFrequent(monograms.mostFrequent(30));
+    processCorpus(&doc, &bigrams);
+    bigrams.dump("bigrams.txt");
 
     return 0;
 }

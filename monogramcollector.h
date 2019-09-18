@@ -28,7 +28,7 @@ public:
 
 protected:
     // ќтображение дл€ хранени€ пары <токен, количество>.
-    std::map<std::string, unsigned int> _tokens;
+    std::map<std::string, unsigned int> _collection;
 
 };
 
