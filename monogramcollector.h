@@ -20,8 +20,14 @@ public:
     template<typename ty1, typename ty2>
     static bool comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
 
+    // ћетод возвращает количество встречемости токена в корпусе.
+    unsigned int operator[](std::string str)const;
+
+    // ћетод возвращает строку по пор€дковому номеру.
+    std::string operator[](unsigned int i)const;
+
     // ћетод возвращает количество проиндексированных уникальных токенов.
-    unsigned int tokenCount()const;
+    unsigned int count()const;
 
     // ћетод возвращает набор из первых count часто встречаемых токенов.
     std::vector<std::pair<std::string, unsigned int>> mostFrequent(unsigned int count)const;

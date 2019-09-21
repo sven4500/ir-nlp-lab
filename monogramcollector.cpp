@@ -14,7 +14,7 @@ MonogramCollector::~MonogramCollector()
 void MonogramCollector::clear()
 {}
 
-unsigned int MonogramCollector::tokenCount()const
+unsigned int MonogramCollector::count()const
 {
     return _collection.size();
 }
@@ -24,6 +24,21 @@ template<typename ty1, typename ty2>
 bool MonogramCollector::comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b)
 {
     return (a.second != b.second) ? a.second > b.second : false;
+}
+
+unsigned int MonogramCollector::operator[](std::string str)const
+{
+    //to_lower_case(str);
+    auto const iter = _collection.find(str);
+    return (iter != _collection.end()) ? iter->second : 0;
+}
+
+std::string MonogramCollector::operator[](unsigned int const i)const
+{
+    auto iter = _collection.begin(), end = _collection.end();
+    for(unsigned int j = 0; j < i || iter != end; ++j)
+        ++iter;
+    return (iter != end) ? iter->first : std::string();
 }
 
 void MonogramCollector::update(XMLElement const* elem)
