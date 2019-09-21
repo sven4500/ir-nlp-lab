@@ -9,14 +9,28 @@ BigramCollector::BigramCollector()
 BigramCollector::~BigramCollector()
 {}
 
-void BigramCollector::tellMostFrequent(std::vector<std::pair<std::string, unsigned int>> const& frequent)
+void BigramCollector::rememberMostFrequent(std::vector<std::pair<std::string, unsigned int>> const& frequent)
 {
     _mostFrequent = std::map<std::string, unsigned int>(frequent.begin(), frequent.end());
 }
 
-void BigramCollector::tellMostFrequent(std::map<std::string, unsigned int> const& frequent)
+void BigramCollector::rememberMostFrequent(std::map<std::string, unsigned int> const& frequent)
 {
     _mostFrequent = frequent;
+}
+
+std::string BigramCollector::first(unsigned int const i)const
+{
+    std::string const& str = operator[](i);
+    std::size_t const pos = str.find(' ');
+    return str.substr(0, pos);
+}
+
+std::string BigramCollector::second(unsigned int const i)const
+{
+    std::string const& str = operator[](i);
+    std::size_t const pos = str.find(' ');
+    return str.substr(pos, std::string::npos);
 }
 
 void BigramCollector::update(XMLElement const* elem)
@@ -31,13 +45,15 @@ void BigramCollector::update(XMLElement const* elem)
 
     while((pos = extract_token(text, token, pos)) != std::string::npos)
     {
-        assert(!token.empty());
+        // extract_token гарантирует что строка не пустая поэтому там
+        // присутствует хотя бы один символ к которому можем обращаться сразу.
         if(!is_alpha_numeric(token[0]))
         {
             to_lower_case(token);
+
             // Считаем токен частью коллокации только если он не является часто
             // употребляемым и не является цифрой или английским словом.
-            if(_mostFrequent.find(token) == _mostFrequent.end())
+            if(_mostFrequent.find(token) == _mostFrequent.cend())
             {
                 if(!lastToken.empty())
                     _collection[lastToken + " " + token]++;

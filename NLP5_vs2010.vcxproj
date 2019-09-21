@@ -83,13 +83,15 @@
   <ItemGroup>
     <ClCompile Include="bigramcollector.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="monogramcollector.cpp" />
+    <ClCompile Include="collector.cpp" />
+    <ClCompile Include="studproc.cpp" />
     <ClCompile Include="textbeautifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bigramcollector.h" />
     <ClInclude Include="icorpusprocessor.h" />
-    <ClInclude Include="monogramcollector.h" />
+    <ClInclude Include="collector.h" />
+    <ClInclude Include="studproc.h" />
     <ClInclude Include="textbeautifier.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

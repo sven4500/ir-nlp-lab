@@ -1,47 +1,48 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
-#include "monogramcollector.h"
+#include "collector.h"
 #include "textbeautifier.h"
 using namespace tinyxml2;
 
-MonogramCollector::MonogramCollector()
+Collector::Collector()
 {}
 
-MonogramCollector::~MonogramCollector()
+Collector::~Collector()
 {}
 
-void MonogramCollector::clear()
-{}
+void Collector::clear()
+{
+    _collection.clear();
+}
 
-unsigned int MonogramCollector::count()const
+unsigned int Collector::count()const
 {
     return _collection.size();
 }
 
 // https://stackoverflow.com/questions/19842035/how-can-i-sort-a-stdmap-first-by-value-then-by-key
 template<typename ty1, typename ty2>
-bool MonogramCollector::comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b)
+bool Collector::comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b)
 {
     return (a.second != b.second) ? a.second > b.second : false;
 }
 
-unsigned int MonogramCollector::operator[](std::string str)const
+unsigned int Collector::operator[](std::string str)const
 {
-    //to_lower_case(str);
     auto const iter = _collection.find(str);
     return (iter != _collection.end()) ? iter->second : 0;
 }
 
-std::string MonogramCollector::operator[](unsigned int const i)const
+std::string Collector::operator[](unsigned int const i)const
 {
-    auto iter = _collection.begin(), end = _collection.end();
-    for(unsigned int j = 0; j < i || iter != end; ++j)
-        ++iter;
+    auto iter = _collection.cbegin();
+    auto const end = _collection.cend();
+    for(unsigned int j = 0; j < i || iter != end; ++j, ++iter);
     return (iter != end) ? iter->first : std::string();
 }
 
-void MonogramCollector::update(XMLElement const* elem)
+void Collector::update(XMLElement const* elem)
 {
     // Исключаем ненужные нам символы UTF-8.
     std::string text = elem->GetText();
@@ -60,7 +61,7 @@ void MonogramCollector::update(XMLElement const* elem)
     }
 }
 
-std::vector<std::pair<std::string, unsigned int>> MonogramCollector::mostFrequent(unsigned int count)const
+std::vector<std::pair<std::string, unsigned int>> Collector::mostFrequent(unsigned int count)const
 {
     std::vector<std::pair<std::string, unsigned int>> vect;
 
@@ -79,7 +80,7 @@ std::vector<std::pair<std::string, unsigned int>> MonogramCollector::mostFrequen
     return vect;
 }
 
-bool MonogramCollector::dump(char const* filename)
+bool Collector::dump(char const* const filename)
 {
     std::ofstream fout;
     fout.open(filename, std::ios::out | std::ios::trunc);

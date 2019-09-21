@@ -18,13 +18,16 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="monogramcollector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="textbeautifier.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="bigramcollector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="studproc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,13 +35,16 @@
     <ClInclude Include="icorpusprocessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="monogramcollector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="textbeautifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="bigramcollector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="studproc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
