@@ -1,3 +1,4 @@
+#include <cassert>
 #include <unicode\unistr.h>
 #include "textbeautifier.h"
 
@@ -45,5 +46,6 @@ std::size_t extract_token(std::string const& str, std::string& token, std::size_
         return std::string::npos;
     std::size_t const size = end - beg;
     token = str.substr(beg, size);
+    assert(!token.empty());
     return end;
 }

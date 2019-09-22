@@ -11,6 +11,8 @@ public:
     StudProc();
     virtual ~StudProc();
 
+    virtual bool dump(char const* filename);
+
     void update(Collector const& monograms, BigramCollector const& bigrams);
 
 };

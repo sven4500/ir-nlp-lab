@@ -20,25 +20,34 @@ public:
     virtual void clear();
     virtual bool dump(char const* filename);
 
-    // ѕредикат сортировки по ключу, т.е. по частоте встречаемости.
-    template<typename ty1, typename ty2>
-    static bool comparer(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
+    // ћетод возвращает константную ссылку на карту элементов дл€ более быстрой
+    // итерации когда требуетс€ обработать всю карту последовательно.
+    std::map<std::string, unsigned int> const& expose()const;
 
     // ћетод возвращает количество встречемости строки str в корпусе.
     unsigned int operator[](std::string str)const;
 
-    // ћетод возвращает строку по пор€дковому номеру.
-    std::string operator[](unsigned int i)const;
-
     // ћетод возвращает количество проиндексированных уникальных строк.
     unsigned int count()const;
 
+    // ¬озвращает количество всего строк (включа€ повтор€ющиес€).
+    unsigned int totalCount()const;
+
     // ћетод возвращает набор из первых count часто встречаемых строк.
     std::vector<std::pair<std::string, unsigned int>> mostFrequent(unsigned int count)const;
+    std::vector<std::pair<std::string, unsigned int>> leastFrequent(unsigned int count)const;
 
 protected:
+    // ѕредикат сортировки по ключу, т.е. по частоте встречаемости.
+    template<typename ty1, typename ty2>
+    static bool descendComp(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
+
+    template<typename ty1, typename ty2>
+    static bool ascendComp(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
+
     // ќтображение дл€ хранени€ пары <токен, количество>.
     std::map<std::string, unsigned int> _collection;
+    unsigned int _totalCount;
 
 };
 

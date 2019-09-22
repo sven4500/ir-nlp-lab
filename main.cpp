@@ -4,6 +4,7 @@
 #include "icorpusprocessor.h"
 #include "collector.h"
 #include "bigramcollector.h"
+#include "studproc.h"
 using namespace tinyxml2;
 
 int const ArgCorpSrc = 1;
@@ -28,6 +29,11 @@ void processCorpus(XMLDocument* doc, ICorpusProcessor* proc)
         proc->update(pageElem);
         pageElem = pageElem->NextSiblingElement();
         ++pages;
+
+        #if defined(_DEBUG)
+        if(pages >= 1000)
+            break;
+        #endif
     }
 
     std::cout << std::endl;
@@ -59,10 +65,22 @@ int main(int argc, char** argv)
     processCorpus(&doc, &monograms);
     monograms.dump(argv[ArgMonoOut]);
 
+    std::cout << "Всего проиндексировано токенов: " << monograms.totalCount() << std::endl
+        << "Из них уникальных: " << monograms.count() << std::endl;
+
     BigramCollector bigrams;
     bigrams.rememberMostFrequent(monograms.mostFrequent(freq));
     processCorpus(&doc, &bigrams);
     bigrams.dump(argv[ArgBiOut]);
+
+    std::cout << "Всего проиндексировано биграмм: " << bigrams.totalCount() << std::endl
+        << "Из них уникльных: " << bigrams.count() << std::endl;
+
+    StudProc stud;
+    stud.update(monograms, bigrams);
+    stud.dump(argv[ArgStudOut]);
+
+    std::cout << "Всего найдено коллокаций (t-критерий Стьюдента): " << stud.count() << std::endl;
 
     return 0;
 }

@@ -17,9 +17,6 @@ public:
 
     virtual void update(tinyxml2::XMLElement const* elem);
 
-    std::string first(unsigned int i)const;
-    std::string second(unsigned int i)const;
-
 protected:
     std::map<std::string, unsigned int> _mostFrequent;
 

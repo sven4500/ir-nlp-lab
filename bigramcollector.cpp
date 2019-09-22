@@ -11,26 +11,12 @@ BigramCollector::~BigramCollector()
 
 void BigramCollector::rememberMostFrequent(std::vector<std::pair<std::string, unsigned int>> const& frequent)
 {
-    _mostFrequent = std::map<std::string, unsigned int>(frequent.begin(), frequent.end());
+    _mostFrequent = std::map<std::string, unsigned int>(frequent.cbegin(), frequent.cend());
 }
 
 void BigramCollector::rememberMostFrequent(std::map<std::string, unsigned int> const& frequent)
 {
     _mostFrequent = frequent;
-}
-
-std::string BigramCollector::first(unsigned int const i)const
-{
-    std::string const& str = operator[](i);
-    std::size_t const pos = str.find(' ');
-    return str.substr(0, pos);
-}
-
-std::string BigramCollector::second(unsigned int const i)const
-{
-    std::string const& str = operator[](i);
-    std::size_t const pos = str.find(' ');
-    return str.substr(pos, std::string::npos);
 }
 
 void BigramCollector::update(XMLElement const* elem)
@@ -56,7 +42,11 @@ void BigramCollector::update(XMLElement const* elem)
             if(_mostFrequent.find(token) == _mostFrequent.cend())
             {
                 if(!lastToken.empty())
+                {
                     _collection[lastToken + " " + token]++;
+                    ++_totalCount;
+                }
+
                 lastToken = token;
             }
             else
