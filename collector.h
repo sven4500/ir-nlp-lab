@@ -10,6 +10,7 @@
 // Класс для сбора коллекции строк из XML элементов (документов корпуса).
 // Хранит пары <строка, частота>. После наследования может быть использован для
 // хранения как монограмм, так и биграмм.
+template<typename T>
 class Collector: public ICorpusProcessor
 {
 public:
@@ -22,10 +23,10 @@ public:
 
     // Метод возвращает константную ссылку на карту элементов для более быстрой
     // итерации когда требуется обработать всю карту последовательно.
-    std::map<std::string, unsigned int> const& expose()const;
+    std::map<std::string, T> const& expose()const;
 
     // Метод возвращает количество встречемости строки str в корпусе.
-    unsigned int operator[](std::string str)const;
+    T operator[](std::string str)const;
 
     // Метод возвращает количество проиндексированных уникальных строк.
     unsigned int count()const;
@@ -34,19 +35,16 @@ public:
     unsigned int totalCount()const;
 
     // Метод возвращает набор из первых count часто встречаемых строк.
-    std::vector<std::pair<std::string, unsigned int>> mostFrequent(unsigned int count)const;
-    std::vector<std::pair<std::string, unsigned int>> leastFrequent(unsigned int count)const;
+    std::vector<std::pair<std::string, T>> mostFrequent(unsigned int count)const;
+    std::vector<std::pair<std::string, T>> leastFrequent(unsigned int count)const;
 
 protected:
     // Предикат сортировки по ключу, т.е. по частоте встречаемости.
-    template<typename ty1, typename ty2>
-    static bool descendComp(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
-
-    template<typename ty1, typename ty2>
-    static bool ascendComp(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b);
+    static bool descendComp(std::pair<std::string, T> const& a, std::pair<std::string, T> const& b);
+    static bool ascendComp(std::pair<std::string, T> const& a, std::pair<std::string, T> const& b);
 
     // Отображение для хранения пары <токен, количество>.
-    std::map<std::string, unsigned int> _collection;
+    std::map<std::string, T> _collection;
     unsigned int _totalCount;
 
 };

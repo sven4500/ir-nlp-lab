@@ -8,7 +8,7 @@ StudProc::StudProc()
 StudProc::~StudProc()
 {}
 
-void StudProc::update(Collector const& monograms, BigramCollector const& bigrams)
+void StudProc::update(Collector<unsigned int> const& monograms, BigramCollector<unsigned int> const& bigrams)
 {
     double const totalCount = bigrams.totalCount();
 
@@ -34,7 +34,7 @@ void StudProc::update(Collector const& monograms, BigramCollector const& bigrams
         double const t = (x - mu) / std::sqrt(x / totalCount);
 
         if(t < 2.576)
-            _collection[iter->first] = (int)(t * 1000000);
+            _collection[iter->first] = t;
     }
 }
 
@@ -44,9 +44,9 @@ bool StudProc::dump(char const* const filename)
     fout.open(filename, std::ios::out | std::ios::trunc);
     if(!fout)
         return false;
-    std::vector<std::pair<std::string, unsigned int>> const vect = leastFrequent(100);
+    std::vector<std::pair<std::string, double>> const vect = leastFrequent(100);
     for(std::size_t i = 0; i < vect.size(); ++i)
-        fout << (int)vect[i].second << ": " << vect[i].first << "\n";
+        fout << vect[i].second << ": " << vect[i].first << "\n";
     fout.close();
     return true;
 }

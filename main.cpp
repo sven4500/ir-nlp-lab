@@ -61,14 +61,14 @@ int main(int argc, char** argv)
     int const freq = atoi(argv[ArgFreq]);
     std::cout << "Количество часто используемых токенов для удаления: " << freq << std::endl;
 
-    Collector monograms;
+    Collector<unsigned int> monograms;
     processCorpus(&doc, &monograms);
     monograms.dump(argv[ArgMonoOut]);
 
     std::cout << "Всего проиндексировано токенов: " << monograms.totalCount() << std::endl
         << "Из них уникальных: " << monograms.count() << std::endl;
 
-    BigramCollector bigrams;
+    BigramCollector<unsigned int> bigrams;
     bigrams.rememberMostFrequent(monograms.mostFrequent(freq));
     processCorpus(&doc, &bigrams);
     bigrams.dump(argv[ArgBiOut]);

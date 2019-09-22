@@ -3,23 +3,31 @@
 #include "textbeautifier.h"
 using namespace tinyxml2;
 
-BigramCollector::BigramCollector()
+template class BigramCollector<unsigned int>;
+template class BigramCollector<double>;
+
+template<typename T>
+BigramCollector<T>::BigramCollector()
 {}
 
-BigramCollector::~BigramCollector()
+template<typename T>
+BigramCollector<T>::~BigramCollector()
 {}
 
-void BigramCollector::rememberMostFrequent(std::vector<std::pair<std::string, unsigned int>> const& frequent)
+template<typename T>
+void BigramCollector<T>::rememberMostFrequent(std::vector<std::pair<std::string, T>> const& frequent)
 {
-    _mostFrequent = std::map<std::string, unsigned int>(frequent.cbegin(), frequent.cend());
+    _mostFrequent = std::map<std::string, T>(frequent.cbegin(), frequent.cend());
 }
 
-void BigramCollector::rememberMostFrequent(std::map<std::string, unsigned int> const& frequent)
+template<typename T>
+void BigramCollector<T>::rememberMostFrequent(std::map<std::string, T> const& frequent)
 {
     _mostFrequent = frequent;
 }
 
-void BigramCollector::update(XMLElement const* elem)
+template<typename T>
+void BigramCollector<T>::update(XMLElement const* elem)
 {
     // Исключаем ненужные нам символы UTF-8.
     std::string text = elem->GetText();

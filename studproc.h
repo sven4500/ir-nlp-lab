@@ -5,7 +5,7 @@
 #include "collector.h"
 #include "bigramcollector.h"
 
-class StudProc: public Collector
+class StudProc: public Collector<double>
 {
 public:
     StudProc();
@@ -13,7 +13,7 @@ public:
 
     virtual bool dump(char const* filename);
 
-    void update(Collector const& monograms, BigramCollector const& bigrams);
+    void update(Collector<unsigned int> const& monograms, BigramCollector<unsigned int> const& bigrams);
 
 };
 

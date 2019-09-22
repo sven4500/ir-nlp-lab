@@ -5,54 +5,65 @@
 #include "textbeautifier.h"
 using namespace tinyxml2;
 
-Collector::Collector():
+template class Collector<unsigned int>;
+template class Collector<double>;
+
+template<typename T>
+Collector<T>::Collector():
     _totalCount(0)
 {}
 
-Collector::~Collector()
+template<typename T>
+Collector<T>::~Collector()
 {}
 
-void Collector::clear()
+template<typename T>
+void Collector<T>::clear()
 {
     _collection.clear();
     _totalCount = 0;
 }
 
-unsigned int Collector::count()const
+template<typename T>
+unsigned int Collector<T>::count()const
 {
     return _collection.size();
 }
 
-unsigned int Collector::totalCount()const
+template<typename T>
+unsigned int Collector<T>::totalCount()const
 {
     return _totalCount;
 }
 
 // https://stackoverflow.com/questions/19842035/how-can-i-sort-a-stdmap-first-by-value-then-by-key
-template<typename ty1, typename ty2>
-bool Collector::descendComp(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b)
+template<typename T>
+bool Collector<T>::descendComp(std::pair<std::string, T> const& a, std::pair<std::string, T> const& b)
 {
     return (a.second != b.second) ? a.second > b.second : false;
 }
 
-template<typename ty1, typename ty2>
-bool Collector::ascendComp(std::pair<ty1, ty2> const& a, std::pair<ty1, ty2> const& b)
+template<typename T>
+bool Collector<T>::ascendComp(std::pair<std::string, T> const& a, std::pair<std::string, T> const& b)
 {
     return (a.second != b.second) ? a.second < b.second : false;
 }
 
-std::map<std::string, unsigned int> const& Collector::expose()const
+template<typename T>
+std::map<std::string, T> const& Collector<T>::expose()const
 {
     return _collection;
 }
 
-unsigned int Collector::operator[](std::string str)const
+template<typename T>
+T Collector<T>::operator[](std::string str)const
 {
     auto const iter = _collection.find(str);
-    return (iter != _collection.end()) ? iter->second : 0;
+    return (iter != _collection.end()) ? iter->second : T();
 }
 
-void Collector::update(XMLElement const* elem)
+template<typename T>
+void Collector<T>::update(XMLElement const* elem)
 {
     // Исключаем ненужные нам символы UTF-8.
     std::string text = elem->GetText();
@@ -63,7 +74,7 @@ void Collector::update(XMLElement const* elem)
 
     while((pos = extract_token(text, token, pos)) != std::string::npos)
     {
-        if(/*!token.empty() &&*/ !is_alpha_numeric(token[0]))
+        if(!is_alpha_numeric(token[0]))
         {
             to_lower_case(token);
             ++_collection[token];
@@ -72,9 +83,10 @@ void Collector::update(XMLElement const* elem)
     }
 }
 
-std::vector<std::pair<std::string, unsigned int>> Collector::mostFrequent(unsigned int count)const
+template<typename T>
+std::vector<std::pair<std::string, T>> Collector<T>::mostFrequent(unsigned int count)const
 {
-    std::vector<std::pair<std::string, unsigned int>> vect;
+    std::vector<std::pair<std::string, T>> vect;
 
     count = std::min(_collection.size(), count);
     if(count == 0)
@@ -86,14 +98,15 @@ std::vector<std::pair<std::string, unsigned int>> Collector::mostFrequent(unsign
     for(auto iter = _collection.begin(), end = _collection.end(); iter != end; ++iter)
         vect[i++] = *iter;
 
-    std::sort(vect.begin(), vect.end(), descendComp<std::string, unsigned int>);
+    std::sort(vect.begin(), vect.end(), descendComp);
     vect.resize(count);
     return vect;
 }
 
-std::vector<std::pair<std::string, unsigned int>> Collector::leastFrequent(unsigned int count)const
+template<typename T>
+std::vector<std::pair<std::string, T>> Collector<T>::leastFrequent(unsigned int count)const
 {
-    std::vector<std::pair<std::string, unsigned int>> vect;
+    std::vector<std::pair<std::string, T>> vect;
 
     count = std::min(_collection.size(), count);
     if(count == 0)
@@ -105,18 +118,19 @@ std::vector<std::pair<std::string, unsigned int>> Collector::leastFrequent(unsig
     for(auto iter = _collection.begin(), end = _collection.end(); iter != end; ++iter)
         vect[i++] = *iter;
 
-    std::sort(vect.begin(), vect.end(), ascendComp<std::string, unsigned int>);
+    std::sort(vect.begin(), vect.end(), ascendComp);
     vect.resize(count);
     return vect;
 }
 
-bool Collector::dump(char const* const filename)
+template<typename T>
+bool Collector<T>::dump(char const* const filename)
 {
     std::ofstream fout;
     fout.open(filename, std::ios::out | std::ios::trunc);
     if(!fout)
         return false;
-    std::vector<std::pair<std::string, unsigned int>> const vect = mostFrequent(100);
+    std::vector<std::pair<std::string, T>> const vect = mostFrequent(100);
     for(std::size_t i = 0; i < vect.size(); ++i)
         fout << vect[i].second << ": " << vect[i].first << "\n";
     fout.close();
