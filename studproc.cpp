@@ -2,15 +2,25 @@
 #include <cassert>
 #include "studproc.h"
 
-StudProc::StudProc()
+template class StudProc<double>;
+template class StudProc<float>;
+
+template<typename T>
+StudProc<T>::StudProc()
 {}
 
-StudProc::~StudProc()
+template<typename T>
+StudProc<T>::~StudProc()
 {}
 
-void StudProc::update(Collector<unsigned int> const& monograms, BigramCollector<unsigned int> const& bigrams)
+template<typename T>
+void StudProc<T>::update(Collector<unsigned int> const& monograms, BigramCollector<unsigned int> const& bigrams)
 {
-    double const totalCount = bigrams.totalCount();
+    unsigned int const totalCount = bigrams.totalCount();
+
+    // TODO: провести анализ и брать среднее по значениям monogram.
+    /*T const freqMin = 250,
+        freqBigramMin = std::sqrt(freqMin);*/
 
     for(auto iter = bigrams.expose().cbegin(), end = bigrams.expose().cend(); iter != end; ++iter)
     {
@@ -24,27 +34,30 @@ void StudProc::update(Collector<unsigned int> const& monograms, BigramCollector<
         if(first.empty() || second.empty())
             continue;
 
-        double const freqBigram = iter->second;
+        T const freqBigram = iter->second,
+            freqFirst = monograms[first],
+            freqSecond = monograms[second];
 
-        double const freqFirst = monograms[first];
-        double const freqSecond = monograms[second];
+        /*if(freqFirst < freqMin && freqSecond < freqMin && freqBigram < freqBigramMin)
+            continue;*/
 
-        double const mu = (freqFirst * freqSecond) / (totalCount * totalCount);
-        double const x = freqBigram / totalCount;
-        double const t = (x - mu) / std::sqrt(x / totalCount);
+        T const mu = (freqFirst * freqSecond) / (totalCount * totalCount),
+            x = freqBigram / totalCount,
+            t = (x - mu) / std::sqrt(x / totalCount);
 
-        if(t < 2.576)
+        if(t > 0 && t < 2.576)
             _collection[iter->first] = t;
     }
 }
 
-bool StudProc::dump(char const* const filename)
+template<typename T>
+bool StudProc<T>::dump(char const* const filename)
 {
     std::ofstream fout;
     fout.open(filename, std::ios::out | std::ios::trunc);
     if(!fout)
         return false;
-    std::vector<std::pair<std::string, double>> const vect = leastFrequent(100);
+    std::vector<std::pair<std::string, T>> const vect = leastFrequent(100);
     for(std::size_t i = 0; i < vect.size(); ++i)
         fout << vect[i].second << ": " << vect[i].first << "\n";
     fout.close();

@@ -25,6 +25,9 @@ public:
     // итерации когда требуется обработать всю карту последовательно.
     std::map<std::string, T> const& expose()const;
 
+    // Удаляет count произвольных элементов из списка.
+    void erase(unsigned int count);
+
     // Метод возвращает количество встречемости строки str в корпусе.
     T operator[](std::string str)const;
 

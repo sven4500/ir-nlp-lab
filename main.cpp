@@ -23,17 +23,15 @@ void processCorpus(XMLDocument* doc, ICorpusProcessor* proc)
 
     while(pageElem != 0)
     {
-        if(pages % 1500 == 0)
+        if(pages % 1000 == 0)
             std::cout << "\rДокументов обработано " << pages;
 
         proc->update(pageElem);
         pageElem = pageElem->NextSiblingElement();
         ++pages;
 
-        #if defined(_DEBUG)
-        if(pages >= 1000)
+        if(pages == 30000)
             break;
-        #endif
     }
 
     std::cout << std::endl;
@@ -76,7 +74,7 @@ int main(int argc, char** argv)
     std::cout << "Всего проиндексировано биграмм: " << bigrams.totalCount() << std::endl
         << "Из них уникльных: " << bigrams.count() << std::endl;
 
-    StudProc stud;
+    StudProc<float> stud;
     stud.update(monograms, bigrams);
     stud.dump(argv[ArgStudOut]);
 

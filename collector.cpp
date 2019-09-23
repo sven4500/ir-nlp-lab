@@ -1,12 +1,15 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
+#include <cstdlib> // rand
+#include <iterator> // advance
 #include "collector.h"
 #include "textbeautifier.h"
 using namespace tinyxml2;
 
 template class Collector<unsigned int>;
 template class Collector<double>;
+template class Collector<float>;
 
 template<typename T>
 Collector<T>::Collector():
@@ -60,6 +63,20 @@ T Collector<T>::operator[](std::string str)const
 {
     auto const iter = _collection.find(str);
     return (iter != _collection.end()) ? iter->second : T();
+}
+
+template<typename T>
+void Collector<T>::erase(unsigned int const count)
+{
+    for(unsigned int i = 0; i < count; ++i)
+    {
+        auto iter = _collection.begin();
+        std::advance(iter, rand() % _collection.size());
+        if(iter != _collection.end())
+            _collection.erase(iter);
+        else
+            break;
+    }
 }
 
 template<typename T>

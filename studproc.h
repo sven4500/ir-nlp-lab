@@ -5,7 +5,8 @@
 #include "collector.h"
 #include "bigramcollector.h"
 
-class StudProc: public Collector<double>
+template<typename T>
+class StudProc: public Collector<T>
 {
 public:
     StudProc();
