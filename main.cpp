@@ -5,6 +5,7 @@
 #include "collector.h"
 #include "bigramcollector.h"
 #include "studproc.h"
+#include "mleproc.h"
 using namespace tinyxml2;
 
 int const ArgCorpSrc = 1;
@@ -77,8 +78,16 @@ int main(int argc, char** argv)
     StudProc<float> stud;
     stud.update(monograms, bigrams);
     stud.dump(argv[ArgStudOut]);
+    stud.clear();
 
     std::cout << "Всего найдено коллокаций (t-критерий Стьюдента): " << stud.count() << std::endl;
+
+    MLEProc<float> mle;
+    mle.update(monograms, bigrams);
+    mle.dump(argv[ArgMleOut]);
+    mle.clear();
+
+    std::cout << "Всего найдено коллокаций (КМП): " << mle.count() << std::endl;
 
     return 0;
 }

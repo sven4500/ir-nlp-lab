@@ -84,6 +84,7 @@
     <ClCompile Include="bigramcollector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="collector.cpp" />
+    <ClCompile Include="mleproc.cpp" />
     <ClCompile Include="studproc.cpp" />
     <ClCompile Include="textbeautifier.cpp" />
   </ItemGroup>
@@ -91,6 +92,7 @@
     <ClInclude Include="bigramcollector.h" />
     <ClInclude Include="icorpusprocessor.h" />
     <ClInclude Include="collector.h" />
+    <ClInclude Include="mleproc.h" />
     <ClInclude Include="studproc.h" />
     <ClInclude Include="textbeautifier.h" />
   </ItemGroup>
