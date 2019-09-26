@@ -78,16 +78,16 @@ int main(int argc, char** argv)
     StudProc<float> stud;
     stud.update(monograms, bigrams);
     stud.dump(argv[ArgStudOut]);
-    stud.clear();
 
     std::cout << "Всего найдено коллокаций (t-критерий Стьюдента): " << stud.count() << std::endl;
+    stud.clear();
 
     MLEProc<float> mle;
     mle.update(monograms, bigrams);
     mle.dump(argv[ArgMleOut]);
-    mle.clear();
 
     std::cout << "Всего найдено коллокаций (КМП): " << mle.count() << std::endl;
+    mle.clear();
 
     return 0;
 }
